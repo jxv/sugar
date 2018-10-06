@@ -2,8 +2,10 @@ module Sugar where
 
 import qualified Text.Megaparsec.Char.Lexer as L
 import qualified Data.Text as T
-import Data.Text (Text)
 import Data.Map (Map)
+import Data.List (intersperse)
+import Data.String (IsString(..))
+import Data.Text (Text)
 import Data.Void (Void)
 import Text.Megaparsec
 import Text.Megaparsec.Char
@@ -16,6 +18,9 @@ data Type = Type
     { tName :: Name
     , tParam :: [Var]
     } deriving (Show, Eq)
+
+instance IsString Type where
+    fromString s = Type (T.pack s) []
 
 data Alias = Alias
     { aName :: Type
@@ -54,6 +59,15 @@ typeW Type{tName,tParam} = tName <> T.concat (map (\p -> " " <> p) tParam)
 
 aliasW :: Alias -> Text
 aliasW Alias{aName,aDefinition} = typeW aName <> " = " <> typeW aDefinition
+
+declW :: Decl -> Text
+declW d = case d of
+    Decl'Alias a -> aliasW a
+    Decl'Record _ -> ""
+    Decl'Variant _ -> ""
+
+fileW :: File -> Text
+fileW file = T.concat $ intersperse "\n\n" (map declW file) ++ ["\n"]
 
 -- Parser
 
