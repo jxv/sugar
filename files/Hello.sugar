@@ -1,9 +1,9 @@
 # Comment
 
-#-
+/*
 Multi
 Comment
--#
+*/
 
 Hello { greeting: String } # Record/product
 
@@ -16,3 +16,6 @@ I64 = Int # Alias
 Result a ( Error { reason: String } | Success { value: a } ) # Type parameter, Embeeded record in variant
 
 IntResult = Result Int
+
+# mappingRecord : Hello.greeting -> String
+# mappingVariant : Interaction.Hello.greeting -> String

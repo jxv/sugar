@@ -1,7 +1,11 @@
 module Sugar where
 
+import qualified Text.Megaparsec.Char.Lexer as L
 import Data.Text (Text)
 import Data.Map (Map)
+import Data.Void (Void)
+import Text.Megaparsec
+import Text.Megaparsec.Char
 
 type Name = Text
 type Var = Text
@@ -41,3 +45,15 @@ data Decl
     deriving (Show, Eq)
 
 type File = [Decl]
+
+-- Parsers
+
+-- typeP :: MonadParsec e s m => m 
+
+type Parser = Parsec Void Text
+
+commentsP :: Parser ()
+commentsP = L.space space1 lineCmnt blockCmnt
+  where
+    lineCmnt  = L.skipLineComment "#"
+    blockCmnt = L.skipBlockComment "/*" "*/"
