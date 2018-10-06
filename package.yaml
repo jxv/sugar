@@ -29,6 +29,7 @@ library:
   source-dirs: library
   default-extensions:
   - OverloadedStrings
+  - NamedFieldPuns
 
 tests:
   sugar-test-suite:

@@ -1,6 +1,7 @@
 module Sugar where
 
 import qualified Text.Megaparsec.Char.Lexer as L
+import qualified Data.Text as T
 import Data.Text (Text)
 import Data.Map (Map)
 import Data.Void (Void)
@@ -46,9 +47,15 @@ data Decl
 
 type File = [Decl]
 
--- Parsers
+-- Writer
 
--- typeP :: MonadParsec e s m => m 
+typeW :: Type -> Text
+typeW Type{tName,tParam} = tName <> T.concat (map (\p -> " " <> p) tParam)
+
+aliasW :: Alias -> Text
+aliasW Alias{aName,aDefinition} = typeW aName <> " = " <> typeW aDefinition
+
+-- Parser
 
 type Parser = Parsec Void Text
 
