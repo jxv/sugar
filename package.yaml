@@ -13,7 +13,7 @@ maintainer: "Joe Vargas"
 
 extra-source-files:
 - CHANGELOG.md
-- LICENSE.md
+- LICENSE
 - package.yaml
 - README.md
 - stack.yaml
@@ -23,8 +23,12 @@ ghc-options: -Wall
 library:
   dependencies:
   - base
+  - containers
   - megaparsec
+  - text
   source-dirs: library
+  default-extensions:
+  - OverloadedStrings
 
 tests:
   sugar-test-suite:
