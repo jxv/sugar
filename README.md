@@ -1,2 +1,2 @@
 # sugar
-Data modeling language
+General-purpose data language

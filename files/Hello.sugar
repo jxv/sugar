@@ -1,0 +1,18 @@
+# Comment
+
+#-
+Multi
+Comment
+-#
+
+Hello { x: Int } # Record/product
+
+Status ( Good | Bad ) # Variant/sum
+
+Interaction ( 'Hello | Goodbye ) # Variant/sum/union
+
+I64 = Int # Alias
+
+Result a ( Error { resaon: String } | Success { value: a } ) # Type parameter, Embeeded record in variant
+
+IntResult = Result Int
