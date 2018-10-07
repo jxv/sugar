@@ -7,6 +7,10 @@ Comment
 
 Hello { greeting: String } # Record/product
 
+Hello {
+  greeting: String,
+}
+
 Status ( Good | Bad ) # Variant/sum
 
 Interaction ( @Hello | Goodbye ) # Variant/sum/union

@@ -2,7 +2,6 @@ module Sugar where
 
 import qualified Text.Megaparsec.Char.Lexer as L
 import qualified Data.Text as T
-import Data.Map (Map)
 import Data.List (intersperse)
 import Data.String (IsString(..))
 import Data.Text (Text)
@@ -29,7 +28,7 @@ data Alias = Alias
 
 data Record = Record
     { rType :: Type
-    , rFields :: Map Field Type
+    , rFields :: [(Field, Type)]
     } deriving (Show, Eq)
 
 data Variant = Variant
@@ -60,11 +59,25 @@ typeW Type{tName,tParam} = tName <> T.concat (map (\p -> " " <> p) tParam)
 aliasW :: Alias -> Text
 aliasW Alias{aName,aDefinition} = typeW aName <> " = " <> typeW aDefinition
 
+recordW :: Bool -> Record -> Text
+recordW True r = typeW (rType r) <> " {\n" <> T.concat (map (\(f,t) -> "  " <> f <> ": " <> typeW t <> ",\n") (rFields r)) <> "}"
+recordW False r = typeW (rType r) <> " {" <> T.concat (map (\(f,t) -> " " <> f <> ": " <> typeW t <> ",") (rFields r)) <> " }"
+
+caseW :: Case -> Text
+caseW c = case c of
+    Case'Ref t -> "@" <> typeW t
+    Case'Record r -> recordW False r
+    Case'Variant v -> variantW v
+    Case'Tag t -> t
+
+variantW :: Variant -> Text
+variantW v = typeW (vType v) <> " ( " <> T.concat (map caseW (vCases v) ++ [" |"]) <> " )"
+
 declW :: Decl -> Text
 declW d = case d of
     Decl'Alias a -> aliasW a
-    Decl'Record _ -> ""
-    Decl'Variant _ -> ""
+    Decl'Record r -> recordW True r
+    Decl'Variant v -> variantW v
 
 fileW :: File -> Text
 fileW file = T.concat $ intersperse "\n\n" (map declW file) ++ ["\n"]
