@@ -1,2 +1,4 @@
 # sugar
-General-purpose data language
+Legible file format
+
+🚧 API will break
