@@ -1,4 +1,4 @@
 # sugar
-Legible file format
+Legible data
 
 🚧 API will break
