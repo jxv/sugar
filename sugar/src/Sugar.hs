@@ -7,6 +7,9 @@ module Sugar
   , ToSugar(..)
   , sugarTextMay
   , readSugarFromFile
+  , readSugarListFromFile
+  , parseSugarFromText
+  , parseSugarListFromText
   , prettyPrintSugarIO
   , prettyPrintSugar
   ) where
@@ -241,8 +244,6 @@ parseSugarFromText :: Text -> Maybe Sugar
 parseSugarFromText t = case P.runParser sugarP "" t of
   Left _ -> Nothing
   Right s -> Just s
-  
-  
   
 readSugarListFromFile :: FilePath -> IO (Maybe Sugar)
 readSugarListFromFile path = do
