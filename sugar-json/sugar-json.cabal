@@ -1,4 +1,4 @@
-name: sugar
+name: sugar-json
 version: 0.0.0
 homepage: https://github.com/jxv/sugar#readme
 bug-reports: https://github.com/jxv/sugar/issues
@@ -19,7 +19,7 @@ source-repository head
 
 library
   exposed-modules:
-      Data.Sugar
+      Sugar.Json
   hs-source-dirs:
       src
   default-extensions:
@@ -34,6 +34,7 @@ library
     , ordered-containers
     , safe
     , scientific
+    , sugar
     , text
     , text-conversions
     , text-show

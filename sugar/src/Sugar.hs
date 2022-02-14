@@ -1,5 +1,5 @@
 {-# LANGUAGE TupleSections, DeriveGeneric, OverloadedStrings, CPP #-}
-module Data.Sugar where
+module Sugar where
 
 import Control.Applicative (Alternative(..))
 import Data.Void (Void)
@@ -10,7 +10,6 @@ import Data.Text.Conversions (ToText(..), fromText, unUTF8, decodeConvertText, U
 import Data.String (IsString(..))
 import Data.Word (Word8,Word16,Word32,Word64)
 import Data.Int (Int8,Int16,Int32,Int64)
-import Data.Scientific (floatingOrInteger)
 import Data.Char (isSeparator)
 import GHC.Generics (Generic)
 import TextShow (TextShow, showt)
@@ -18,19 +17,8 @@ import TextShow (TextShow, showt)
 import qualified Data.Set as Set
 import qualified Data.Map as Map
 
-#if MIN_VERSION_aeson(2,0,0)
-import qualified Data.Aeson.Key as AesonKey
-import qualified Data.Aeson.KeyMap as KeyMap
-#else
--- *import qualified Data.Aeson.Key as AesonKey
-import qualified Data.HashMap.Strict as KeyMap
-#endif
-
 import qualified Data.Serialize as Serialize
 import qualified Data.ByteString as BS
-import qualified Data.ByteString.Lazy as BL
-import qualified Data.Aeson as Json
-import qualified Data.Vector as V
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import qualified Text.Megaparsec as P
@@ -48,22 +36,6 @@ class Similar a where
 instance Ord a => Similar [a] where
   (~~) a b = Set.fromList a == Set.fromList b
 
--- SugarCube is a refined type of Sugar.
--- This is a useful interface when a Json-like format is easier.
--- Differences:
--- * No notes
--- * No list wrap
--- * Maps are string-key value pairs
-data SugarCube
-  = SugarCube'Unit
-  | SugarCube'Text Text
-  | SugarCube'List [SugarCube]
-  | SugarCube'Map (Map Text SugarCube)
-  deriving (Eq, Show)
-
-class ToSugarCube a where
-  toSugarCube :: a -> SugarCube
-  
 class FromSugar a where
   parseSugar :: Sugar -> Maybe a
   
@@ -85,16 +57,6 @@ instance FromSugar a => FromSugar [a] where
   parseSugar (Sugar'List xs _ _) = mapM parseSugar xs
   parseSugar _ = Nothing
     
-
-sugarCubeMay :: Sugar -> Maybe SugarCube
-sugarCubeMay (Sugar'Unit _) = Just SugarCube'Unit
-sugarCubeMay (Sugar'Text t _) = Just $ SugarCube'Text t
-sugarCubeMay (Sugar'List xs _ _) = do
-  xs' <- mapM sugarCubeMay xs
-  return $ SugarCube'List xs'
-sugarCubeMay (Sugar'Map xs _) = do
-  xs' <- mapM (\(k,v) -> (,) <$> sugarTextMay k <*> sugarCubeMay v) xs
-  return $ SugarCube'Map (Map.fromList xs')
 
 sugarTextMay :: Sugar -> Maybe Text
 sugarTextMay (Sugar'Text t _) = Just t
@@ -156,17 +118,6 @@ instance IsString Sugar where
 class ToSugar a where
   toSugar :: a -> Sugar
 
-instance ToSugar SugarCube where
-  toSugar SugarCube'Unit = Sugar'Unit Nothing
-  toSugar (SugarCube'Text t) = Sugar'Text t Nothing
-  toSugar (SugarCube'List xs) = Sugar'List (map (toSugarWithWrap Wrap'Paren) xs) Wrap'Square Nothing
-    where
-      -- Alternate nesting between Wrap types
-      toSugarWithWrap w c = case c of
-        SugarCube'List ys -> Sugar'List (map (toSugarWithWrap (case w of Wrap'Square -> Wrap'Paren; Wrap'Paren -> Wrap'Square)) ys) w Nothing
-        _ -> toSugar c
-  toSugar (SugarCube'Map m) = Sugar'Map (map (\(k,v) -> (toSugar k, toSugar v)) $ Map.toList m) Nothing
-
 instance ToSugar () where
   toSugar () = Sugar'Unit Nothing
 
@@ -222,46 +173,6 @@ mySugar' = Sugar'Map [
   ] Nothing
 
 ---
-
-instance ToSugarCube Json.Value where
-  toSugarCube Json.Null = SugarCube'Unit
-  toSugarCube (Json.Bool b) = SugarCube'Text (showt b)
-  toSugarCube (Json.String t) = SugarCube'Text t
-  toSugarCube (Json.Number n) = SugarCube'Text (showNumber n)
-    where
-      showNumber s = either showt showt $ (floatingOrInteger s :: Either Double Integer)
-  toSugarCube (Json.Array a) = SugarCube'List $ map toSugarCube (V.toList a)
-  toSugarCube (Json.Object o) = SugarCube'Map . Map.fromList . map (\(k,v) -> (keyText k, toSugarCube v)) . KeyMap.toList $ o
-    where
-#if MIN_VERSION_aeson(2,0,0)
-      keyText = AesonKey.toText
-#else
-      keyText = id
-#endif
-  
-instance Json.FromJSON SugarCube where
-  parseJSON v = pure $ toSugarCube v
-  
-instance Json.FromJSON Sugar where
-  parseJSON v = pure . toSugar . toSugarCube $ v
-  
-writeJsonAsSugarBinary :: FilePath -> FilePath -> IO ()
-writeJsonAsSugarBinary src des = do
-  bsl <- BL.readFile src
-  let value' = Json.decode' bsl :: Maybe Sugar
-  case value' of
-    Nothing -> putStrLn "Can not decode"
-    Just sugar ->  BS.writeFile des $ Serialize.encode sugar
-
-writeJsonAsSugar :: FilePath -> FilePath -> IO ()
-writeJsonAsSugar src des = do
-  bsl <- BL.readFile src
-  let value' = Json.decode' bsl :: Maybe Sugar
-  case value' of
-    Nothing -> putStrLn "Can not decode"
-    Just sugar ->  TIO.writeFile des $ prettyPrint sugar
-
-
 data PrettyPrintConfig = PrettyPrintConfig
   { ppcTabbedSpaces :: Int
   } deriving (Show, Eq)
@@ -335,15 +246,15 @@ minifyPrintNote (Just s) = "<" <> minifyPrint s <> ">"
 
 sanitizeText :: Text -> Text
 sanitizeText t
-  | T.length t == 0 = "''"
-  | T.find (\c -> isSeparator c || elem c reservedChars) t /= Nothing = "'" <> replaceSingleQuotes t <> "'"
+  | T.length t == 0 = "\"\""
+  | T.find (\c -> isSeparator c || elem c reservedChars) t /= Nothing = "\"" <> replaceDoubleQuotes t <> "\""
   | otherwise = t
   where
-    replaceSingleQuotes :: Text -> Text
-    replaceSingleQuotes = T.replace "'" "''"
+    replaceDoubleQuotes :: Text -> Text
+    replaceDoubleQuotes = T.replace "\"" "\\\""
     
 reservedChars :: [Char]
-reservedChars = ['\'','[',']','<','>','(',')','{','}',';']
+reservedChars = ['\"','[',']','<','>','(',')','{','}',';']
 
 ---
 ---
@@ -385,7 +296,7 @@ sugarP' :: Parser Sugar
 sugarP' = do
   c <- P.lookAhead P.anySingle
   case c of
-    '\'' -> quotedTextP
+    '\"' -> quotedTextP
     '(' -> P.choice [unitP, parenListP]
     ')' -> fail "Not valid Sugar"
     '[' -> squareListP
@@ -443,19 +354,19 @@ symbol :: Text -> Parser Text
 symbol = L.symbol sc
 
 quotedTextP :: Parser Sugar
-quotedTextP = Sugar'Text <$> singleQuotedTextP_ <*> (sc *> noteP)
+quotedTextP = Sugar'Text <$> doubleQuotedTextP_ <*> (sc *> noteP)
 
 unQuotedTextP :: Parser Sugar
 unQuotedTextP = Sugar'Text <$> notQuotedTextP_ <*> noteP
 
-singleQuotedTextP_ :: Parser Text
-singleQuotedTextP_ = T.pack <$> quotedP
+doubleQuotedTextP_ :: Parser Text
+doubleQuotedTextP_ = T.pack <$> quotedP
   where
     quotedP :: Parser String
-    quotedP = P.between (P.char '\'') (P.char '\'') (many (P.try escaped <|> normalChar))
+    quotedP = P.between (P.char '\"') (P.char '\"') (many (P.try escaped <|> normalChar))
        where
-         escaped = '\'' <$ P.string "''"
-         normalChar = P.satisfy (/='\'')
+         escaped = '\"' <$ P.string "\\\""
+         normalChar = P.satisfy (/='\"')
 
 notQuotedTextP_ :: Parser Text
 notQuotedTextP_ = P.takeWhileP (Just "Text char") (\c -> not $ isSeparator c || c == '\n' || elem c reservedChars)
