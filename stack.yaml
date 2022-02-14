@@ -2,7 +2,10 @@ resolver: lts-18.25
 packages:
 - sugar
 - sugar-json
-# extra-deps: []
+- sugar-scheme
+extra-deps:
+- husk-scheme-3.20@sha256:b0b0d6940f47beb651171b132987cdfadfa73c2a0acd7919e0e41748651eeef0,5696
+- knob-0.1.1@sha256:8dd62f0470fd829d5c4137b5ecfb0cb9a04a829fa8f436959d460019b3a6f118,1401
 # flags: {}
 # extra-package-dbs: []
 # system-ghc: true

@@ -3,7 +3,21 @@
 # For more information, please see the documentation at:
 #   https://docs.haskellstack.org/en/stable/lock_files
 
-packages: []
+packages:
+- completed:
+    hackage: husk-scheme-3.20@sha256:b0b0d6940f47beb651171b132987cdfadfa73c2a0acd7919e0e41748651eeef0,5696
+    pantry-tree:
+      size: 3770
+      sha256: 8bef0b629c5d9884a8b1da21024cc20bed1dd5f4c00bcd232b3864dc90a7e119
+  original:
+    hackage: husk-scheme-3.20@sha256:b0b0d6940f47beb651171b132987cdfadfa73c2a0acd7919e0e41748651eeef0,5696
+- completed:
+    hackage: knob-0.1.1@sha256:8dd62f0470fd829d5c4137b5ecfb0cb9a04a829fa8f436959d460019b3a6f118,1401
+    pantry-tree:
+      size: 507
+      sha256: 3cdacac3d8d6a75fc501c77fc419c65e1dcdb0f1f4212e99c5e7c3ceb2998454
+  original:
+    hackage: knob-0.1.1@sha256:8dd62f0470fd829d5c4137b5ecfb0cb9a04a829fa8f436959d460019b3a6f118,1401
 snapshots:
 - completed:
     size: 587393
