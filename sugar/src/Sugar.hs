@@ -1,5 +1,15 @@
 {-# LANGUAGE TupleSections, DeriveGeneric, OverloadedStrings, CPP #-}
-module Sugar where
+module Sugar
+  ( Sugar(..)
+  , Wrap(..)
+  , Note
+  , FromSugar(..)
+  , ToSugar(..)
+  , sugarTextMay
+  , readSugarFromFile
+  , prettyPrintSugarIO
+  , prettyPrintSugar
+  ) where
 
 import Control.Applicative (Alternative(..))
 import Data.Void (Void)
@@ -14,9 +24,7 @@ import Data.Char (isSeparator)
 import GHC.Generics (Generic)
 import TextShow (TextShow, showt)
 
-import qualified Data.Set as Set
 import qualified Data.Map as Map
-
 import qualified Data.Serialize as Serialize
 import qualified Data.ByteString as BS
 import qualified Data.Text as T
@@ -27,56 +35,21 @@ import qualified Text.Megaparsec.Char.Lexer as L
 
 ---
 
-class Similar a where
-  (~~) :: a -> a -> Bool
-  (~~) x y = not (x /~ y)
-  (/~) :: a -> a -> Bool
-  (/~) x y = not (x ~~ y)
-
-instance Ord a => Similar [a] where
-  (~~) a b = Set.fromList a == Set.fromList b
-
-class FromSugar a where
-  parseSugar :: Sugar -> Maybe a
-  
-data Color
-  = Color'R
-  | Color'G
-  | Color'B
-  deriving (Show, Eq)
-
-instance FromSugar Color where
-  parseSugar (Sugar'Text a _) = case a of
-    "R" -> Just Color'R
-    "G" -> Just Color'G
-    "B" -> Just Color'B
-    _ -> Nothing
-  parseSugar _ = Nothing
-  
-instance FromSugar a => FromSugar [a] where
-  parseSugar (Sugar'List xs _ _) = mapM parseSugar xs
-  parseSugar _ = Nothing
-    
-
-sugarTextMay :: Sugar -> Maybe Text
-sugarTextMay (Sugar'Text t _) = Just t
-sugarTextMay _ = Nothing
-
-type Note = Maybe Sugar
-
-data Wrap
-  = Wrap'Square
-  | Wrap'Paren
-  deriving (Eq, Show, Generic)
-
-instance Serialize.Serialize Wrap where
-
 data Sugar
   = Sugar'Unit Note
   | Sugar'Text Text Note
   | Sugar'List [Sugar] Wrap Note
   | Sugar'Map [(Sugar,Sugar)] Note
   deriving (Eq, Show, Generic)
+  
+data Wrap
+  = Wrap'Square
+  | Wrap'Paren
+  deriving (Eq, Show, Generic)
+  
+type Note = Maybe Sugar
+  
+--
 
 instance Serialize.Serialize Sugar where
   get = do
@@ -112,8 +85,25 @@ instance Serialize.Serialize Sugar where
     Serialize.put m
     Serialize.put note  
 
+instance Serialize.Serialize Wrap where
+
 instance IsString Sugar where
   fromString str = Sugar'Text (toText str) Nothing
+
+--
+
+class FromSugar a where
+  parseSugar :: Sugar -> Maybe a
+  
+instance FromSugar a => FromSugar [a] where
+  parseSugar (Sugar'List xs _ _) = mapM parseSugar xs
+  parseSugar _ = Nothing
+
+sugarTextMay :: Sugar -> Maybe Text
+sugarTextMay (Sugar'Text t _) = Just t
+sugarTextMay _ = Nothing
+
+--
 
 class ToSugar a where
   toSugar :: a -> Sugar
@@ -154,25 +144,8 @@ instance ToSugar Double where toSugar = sugarShow
 sugarShow :: TextShow a => a -> Sugar
 sugarShow s = Sugar'Text (showt s) Nothing
 
---
-
-mySugar :: Sugar
-mySugar = Sugar'Map [(Sugar'Text "key" Nothing, Sugar'Text "value" Nothing)] Nothing
-
-mySugar' :: Sugar
-mySugar' = Sugar'Map [
-    (Sugar'Text "key" (Just "A-che-ora"), Sugar'Text "value" (Just "A che ora")),
-    (Sugar'Text "anotherKey" Nothing, Sugar'Map
-      [
-        (Sugar'Text "a" Nothing, Sugar'Text "12345\"6789" Nothing),
-        (Sugar'Text "c" Nothing, Sugar'Text "12345    6789" Nothing),
-        (Sugar'Text "e" Nothing, Sugar'Text "123'456789" Nothing),
-        (Sugar'Text "d" Nothing, Sugar'List ["", "", Sugar'List [Sugar'List [Sugar'List ["","",Sugar'Map [("",Sugar'Map [] Nothing),("",Sugar'Map [] Nothing)] Nothing] Wrap'Paren Nothing] Wrap'Square Nothing]Wrap'Paren Nothing] Wrap'Square Nothing)
-      ]
-      (Just "Hello"))
-  ] Nothing
-
 ---
+
 data PrettyPrintConfig = PrettyPrintConfig
   { ppcTabbedSpaces :: Int
   } deriving (Show, Eq)
@@ -181,14 +154,14 @@ data PrettyPrintState = PrettyPrintState
   { ppsNesting :: Int
   } deriving (Show, Eq)
 
-prettyPrintIO :: Sugar -> IO ()
-prettyPrintIO = TIO.putStr . prettyPrint
+prettyPrintSugarIO :: Sugar -> IO ()
+prettyPrintSugarIO = TIO.putStr . prettyPrintSugar
 
-prettyPrint :: Sugar -> Text
-prettyPrint = prettyPrint' (PrettyPrintConfig 2)
+prettyPrintSugar :: Sugar -> Text
+prettyPrintSugar = prettyPrintSugar' (PrettyPrintConfig 2)
 
-prettyPrint' :: PrettyPrintConfig -> Sugar -> Text
-prettyPrint' ppc = prettyPrintStep ppc (PrettyPrintState 0)
+prettyPrintSugar' :: PrettyPrintConfig -> Sugar -> Text
+prettyPrintSugar' ppc = prettyPrintStep ppc (PrettyPrintState 0)
 
 prettyPrintNesting :: PrettyPrintConfig -> PrettyPrintState -> Text
 prettyPrintNesting ppc pps = T.replicate (ppcTabbedSpaces ppc * ppsNesting pps) " "
@@ -310,10 +283,8 @@ sugarP' = do
 unitP :: Parser Sugar
 unitP = P.string "()" *> sc *> (Sugar'Unit <$> noteP)
 
-parenListP :: Parser Sugar
+parenListP, squareListP :: Parser Sugar
 parenListP = (\xs -> Sugar'List xs Wrap'Paren) <$> parensP (P.many sugarP') <*> noteP
-
-squareListP :: Parser Sugar
 squareListP = (\xs -> Sugar'List xs Wrap'Square) <$> (squareBracketsP $ sc *> P.many elementP <* sc) <*> noteP
   where
     elementP :: Parser Sugar
@@ -325,10 +296,8 @@ noBracketsListP = (\xs -> Sugar'List xs Wrap'Square) <$> (sc *> P.many elementP 
     elementP :: Parser Sugar
     elementP = sc *> sugarP' <* sc
 
-mapP :: Parser Sugar
+mapP, noCurlysMapP :: Parser Sugar
 mapP = Sugar'Map <$> (curlyBracesP $ sc *> P.many mapPairP <* sc) <*> noteP
-
-noCurlysMapP :: Parser Sugar
 noCurlysMapP = Sugar'Map <$> (sc *> P.many mapPairP <* sc) <*> pure Nothing
 
 -- TODO: Instead of `P.space1`, use the same characters for `isSeparator`
@@ -338,28 +307,20 @@ mapPairP = (,) <$> sugarP' <*> (sc *> sugarP') <* sc
 noteP :: Parser Note
 noteP = P.optional $ angleBracketsP sugarP'
 
-parensP :: Parser a -> Parser a
+parensP, angleBracketsP, squareBracketsP, curlyBracesP :: Parser a -> Parser a
 parensP = P.between (symbol "(") (symbol ")")
-
-angleBracketsP  :: Parser a -> Parser a
 angleBracketsP = P.between (symbol "<") (symbol ">")
-
-squareBracketsP  :: Parser a -> Parser a
 squareBracketsP = P.between (symbol "[") (symbol "]")
-
-curlyBracesP  :: Parser a -> Parser a
 curlyBracesP = P.between (symbol "{") (symbol "}")
 
 symbol :: Text -> Parser Text
 symbol = L.symbol sc
 
-quotedTextP :: Parser Sugar
+quotedTextP, unQuotedTextP :: Parser Sugar
 quotedTextP = Sugar'Text <$> doubleQuotedTextP_ <*> (sc *> noteP)
-
-unQuotedTextP :: Parser Sugar
 unQuotedTextP = Sugar'Text <$> notQuotedTextP_ <*> noteP
 
-doubleQuotedTextP_ :: Parser Text
+doubleQuotedTextP_, notQuotedTextP_ :: Parser Text
 doubleQuotedTextP_ = T.pack <$> quotedP
   where
     quotedP :: Parser String
@@ -367,8 +328,6 @@ doubleQuotedTextP_ = T.pack <$> quotedP
        where
          escaped = '\"' <$ P.string "\\\""
          normalChar = P.satisfy (/='\"')
-
-notQuotedTextP_ :: Parser Text
 notQuotedTextP_ = P.takeWhileP (Just "Text char") (\c -> not $ isSeparator c || c == '\n' || elem c reservedChars)
 
 sc :: Parser ()
@@ -379,17 +338,3 @@ sc = L.space
   
 ws :: Parser ()
 ws = (P.newline <|> P.separatorChar) *> pure ()
-
----
-
-keyVal :: IO ()
-keyVal = readSugarFromFile "keyValue.sg" >>= \(Just sg) -> prettyPrintIO sg
-
-large :: IO ()
-large = readSugarFromFile "large.sg" >>= \(Just sg) -> prettyPrintIO sg
-
-mysugar :: IO ()
-mysugar = readSugarFromFile "mysugar.sg" >>= \(Just sg) -> prettyPrintIO sg
-
-noline :: IO ()
-noline = readSugarFromFile "noline.sg" >>= \(Just sg) -> prettyPrintIO sg

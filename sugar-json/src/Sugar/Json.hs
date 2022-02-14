@@ -1,6 +1,11 @@
 {-# LANGUAGE TupleSections, DeriveGeneric, OverloadedStrings, CPP #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-module Sugar.Json where
+module Sugar.Json
+  ( SugarCube(..)
+  , sugarCubeMay
+  , writeJsonAsSugarBinary
+  , writeJsonAsSugar
+  ) where
 
 import Data.Text (Text)
 import Data.Map (Map)
@@ -66,7 +71,7 @@ writeJsonAsSugar src des = do
   let value' = Json.decode' bsl :: Maybe Sugar
   case value' of
     Nothing -> putStrLn "Can not decode"
-    Just sugar ->  TIO.writeFile des $ prettyPrint sugar
+    Just sugar ->  TIO.writeFile des $ prettyPrintSugar sugar
 
 
 instance ToSugar SugarCube where
