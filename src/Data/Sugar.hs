@@ -1,4 +1,4 @@
-{-# LANGUAGE TupleSections, DeriveGeneric, OverloadedStrings #-}
+{-# LANGUAGE TupleSections, DeriveGeneric, OverloadedStrings, CPP #-}
 module Data.Sugar where
 
 import Control.Applicative (Alternative(..))
@@ -17,8 +17,15 @@ import TextShow (TextShow, showt)
 
 import qualified Data.Set as Set
 import qualified Data.Map as Map
+
+#if MIN_VERSION_aeson(2,0,0)
 import qualified Data.Aeson.Key as AesonKey
 import qualified Data.Aeson.KeyMap as KeyMap
+#else
+-- *import qualified Data.Aeson.Key as AesonKey
+import qualified Data.HashMap.Strict as KeyMap
+#endif
+
 import qualified Data.Serialize as Serialize
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BL
@@ -224,7 +231,13 @@ instance ToSugarCube Json.Value where
     where
       showNumber s = either showt showt $ (floatingOrInteger s :: Either Double Integer)
   toSugarCube (Json.Array a) = SugarCube'List $ map toSugarCube (V.toList a)
-  toSugarCube (Json.Object o) = SugarCube'Map . Map.fromList . map (\(k,v) -> (AesonKey.toText k, toSugarCube v)) . KeyMap.toList $ o
+  toSugarCube (Json.Object o) = SugarCube'Map . Map.fromList . map (\(k,v) -> (keyText k, toSugarCube v)) . KeyMap.toList $ o
+    where
+#if MIN_VERSION_aeson(2,0,0)
+      keyText = AesonKey.toText
+#else
+      keyText = id
+#endif
   
 instance Json.FromJSON SugarCube where
   parseJSON v = pure $ toSugarCube v
