@@ -1,13 +1,16 @@
 name: sugar
 version: 0.0.0
+synopsis: Legible data
 homepage: https://github.com/jxv/sugar#readme
+description: Please see the README on GitHub at <https://github.com/jxv/sugar#readme>
+category: Text, Configuration
 bug-reports: https://github.com/jxv/sugar/issues
 author: Joe Vargas
 maintainer: Joe Vargas
 license: MIT
 license-file: LICENSE
 build-type: Simple
-cabal-version: >=1.14
+cabal-version: 1.14
 extra-source-files:
     CHANGELOG.md
     LICENSE
