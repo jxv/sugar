@@ -25,7 +25,6 @@ import Data.Word (Word8,Word16,Word32,Word64)
 import Data.Int (Int8,Int16,Int32,Int64)
 import Data.Char (isSeparator)
 import GHC.Generics (Generic)
-import TextShow (TextShow, showt)
 
 import qualified Data.Map as Map
 import qualified Data.Serialize as Serialize
@@ -144,8 +143,8 @@ instance ToSugar Word64 where toSugar = sugarShow
 instance ToSugar Float where toSugar = sugarShow
 instance ToSugar Double where toSugar = sugarShow
 
-sugarShow :: TextShow a => a -> Sugar
-sugarShow s = Sugar'Text (showt s) Nothing
+sugarShow :: Show a => a -> Sugar
+sugarShow s = Sugar'Text (T.pack $ show s) Nothing
 
 ---
 
