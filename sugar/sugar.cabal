@@ -23,6 +23,10 @@ source-repository head
 library
   exposed-modules:
       Sugar
+      Sugar.Types
+      Sugar.IO
+      Sugar.Parse
+      Sugar.TH
   hs-source-dirs:
       src
   default-extensions:
