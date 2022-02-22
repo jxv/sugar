@@ -9,7 +9,9 @@ ___
 ### Example
 
 ```sugar
-; The top-level map of key-value pairs is the default.
+; This is a comment
+; This snippet shows the top-level map of key-value pairs.
+; It is the default.
 
 ; key0 and key1 are text types. value0 and "value one within..." are text types too.
 key0 value0
@@ -47,11 +49,13 @@ key7<(can be a list)> value7<{or be a key value pair}>
 | Map | `{}` or `{key1 value1}` or `{key1 value1 key2 value2}` |
 | Note | `()<note>` or `text<note>` or`(a b c)<note>` or `{k v}<note>` |
 
+_\*Notice the lack of number and boolean types. Unit can be thought of as null._
+
 ### Comments
 
 | Type | Example |
 | ---- | ------- |
 | Single-line | `; comment` |
-| Multi-line | `#| comment content |#` |
+| Multi-line | `#\| comment content \|#` |
 
 
