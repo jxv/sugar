@@ -8,7 +8,7 @@ ___
 
 ### Example
 
-```sugar
+```scheme
 ; This is a comment
 ; This snippet shows the top-level map of key-value pairs.
 ; It is the default.
