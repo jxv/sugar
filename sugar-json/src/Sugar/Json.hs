@@ -10,7 +10,6 @@ module Sugar.Json
 import Data.Text (Text)
 import Data.Map (Map)
 import Data.Scientific (floatingOrInteger)
-import TextShow (showt)
 
 import qualified Data.Map as Map
 
@@ -27,6 +26,7 @@ import qualified Data.ByteString.Lazy as BL
 import qualified Data.Aeson as Json
 import qualified Data.Vector as V
 import qualified Data.Text.IO as TIO
+import qualified Data.Text as T
 
 import Sugar
 
@@ -87,11 +87,11 @@ instance ToSugar SugarCube where
 
 instance ToSugarCube Json.Value where
   toSugarCube Json.Null = SugarCube'Unit
-  toSugarCube (Json.Bool b) = SugarCube'Text (showt b)
+  toSugarCube (Json.Bool b) = SugarCube'Text (T.pack $ show b)
   toSugarCube (Json.String t) = SugarCube'Text t
   toSugarCube (Json.Number n) = SugarCube'Text (showNumber n)
     where
-      showNumber s = either showt showt $ (floatingOrInteger s :: Either Double Integer)
+      showNumber s = T.pack $ either show show $ (floatingOrInteger s :: Either Double Integer)
   toSugarCube (Json.Array a) = SugarCube'List $ map toSugarCube (V.toList a)
   toSugarCube (Json.Object o) = SugarCube'Map . Map.fromList . map (\(k,v) -> (keyText k, toSugarCube v)) . KeyMap.toList $ o
     where

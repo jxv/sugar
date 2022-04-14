@@ -2,19 +2,29 @@
 import Sugar
 import qualified Test.Tasty
 import Test.Tasty.Hspec
+import Test.Hspec
+
+import Sugar.Lexer
+import Sugar.Parser
 
 main :: IO ()
 main = do
-    test <- testSpec "sugar" spec
-    Test.Tasty.defaultMain test
+  test <- testSpec "sugar" spec
+  Test.Tasty.defaultMain test
 
 spec :: Spec
 spec = parallel $ do
-    it "is trivially true" $ do
-        True `shouldBe` True
-
---
---
+  it "unit" $ do
+    let actual = map snd $ psSteps $ sugarLexerState "()"
+    let expected = [Token'OpenParen, Token'CloseParen]
+    actual `shouldBe` expected
+  it "empty map" $ do
+    let actual = map snd $ psSteps $ sugarLexerState "{}"
+    let expected = [Token'OpenCurl, Token'CloseCurl]
+    actual `shouldBe` expected
+  --
+  it "" $ do
+    True `shouldBe` True
 
 mySugar :: Sugar
 mySugar = Sugar'Map [(Sugar'Text "key" Nothing, Sugar'Text "value" Nothing)] Nothing

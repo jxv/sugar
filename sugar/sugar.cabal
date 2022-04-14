@@ -25,7 +25,8 @@ library
       Sugar
       Sugar.Types
       Sugar.IO
-      Sugar.Parse
+      Sugar.Parser
+      Sugar.Lexer
       Sugar.TH
   hs-source-dirs:
       src
@@ -35,6 +36,7 @@ library
       base >=4.7 && <5
     , bytestring
     , cereal
+    , store
     , containers >0.5 && <1
     , megaparsec
     , ordered-containers
@@ -53,6 +55,7 @@ test-suite sugar-test-suite
   ghc-options: -Wall -rtsopts -threaded -with-rtsopts=-N
   build-depends:
       base
+    , hspec
     , sugar
     , tasty
     , tasty-hspec

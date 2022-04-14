@@ -27,6 +27,7 @@ import qualified Text.Megaparsec as P
 
 import Sugar.Types
 import Sugar.Parse
+import Sugar.Lexer
 
 --
 

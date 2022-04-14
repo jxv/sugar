@@ -1,0 +1,2 @@
+packages: .
+packages: sugar ../sugar/cabal-install.cabal

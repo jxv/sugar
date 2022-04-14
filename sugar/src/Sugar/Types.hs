@@ -23,6 +23,7 @@ import Safe (readMay)
 
 import qualified Data.Map as Map
 import qualified Data.Serialize as Serialize
+import qualified Data.Store as Store ()
 import qualified Data.ByteString as BS
 import qualified Data.Text as T
 
@@ -137,6 +138,11 @@ instance FromSugar Text where
   parseSugar (Sugar'Text t _) = Just t
   parseSugar _ = Nothing
 
+instance FromSugar Bool where
+  parseSugar s = fmap
+    (\n -> if (n :: Integer) /= 0 then True else False)
+    (readSugarMay s)
+
 instance FromSugar Integer where parseSugar = readSugarMay
 instance FromSugar Int where parseSugar = readSugarMay
 instance FromSugar Int8 where parseSugar = readSugarMay
@@ -177,6 +183,9 @@ instance (ToSugar a, ToSugar b) => ToSugar (a,b) where
 
 instance (ToSugar a, ToSugar b, ToSugar c) => ToSugar (a,b,c) where
   toSugar (a,b,c) = Sugar'List [toSugar a, toSugar b, toSugar c] Wrap'Paren Nothing
+
+instance ToSugar Bool where
+  toSugar s = toSugar (if s then 1 else 0 :: Integer)
 
 instance ToSugar Integer where toSugar = sugarShow
 instance ToSugar Int where toSugar = sugarShow

@@ -8,7 +8,7 @@ ___
 
 ### Example
 
-```scheme
+```racket
 ; This is a comment
 ; This snippet shows the top-level map of key-value pairs.
 ; It is the default.
@@ -26,7 +26,7 @@ key4 {keyA valueA keyB valueB}
 key5 {keyA {nestedKey nestedValue} keyB valueB}
 
 #| Key aren't limited to text types. Lists can be used as the key.
-   Maps can also be used as the key. #|
+   Maps can also be used as the key. |#
 (list as keys) value
 {id0 value0 id1 value1} value
 
@@ -56,6 +56,4 @@ _\*Notice the lack of number and boolean types. Unit can be thought of as null._
 | Type | Example |
 | ---- | ------- |
 | Single-line | `; comment` |
-| Multi-line | `#\| comment content \|#` |
-
-
+| Multi-line | ```#\| comment content \|#``` |

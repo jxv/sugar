@@ -4,5 +4,6 @@ module Sugar
   ) where
 
 import Sugar.Types as X
-import Sugar.Parse as X
+import Sugar.Lexer as X
+import Sugar.Parser as X
 import Sugar.IO as X
