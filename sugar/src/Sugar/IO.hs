@@ -26,7 +26,7 @@ import qualified Data.Text.IO as TIO
 import qualified Text.Megaparsec as P
 
 import Sugar.Types
-import Sugar.Parse
+import Sugar.Parser
 import Sugar.Lexer
 
 --
@@ -117,9 +117,9 @@ readSugarFromFile path = do
   return $ parseSugarFromText content
 
 parseSugarFromText :: Text -> Maybe Sugar
-parseSugarFromText t = case P.runParser sugarP "" t of
-  Left _ -> Nothing
-  Right s -> Just s
+parseSugarFromText t = case runParser sugarParseTopLevel (psSteps $ sugarLexerState (T.unpack t)) of
+  (_, Left _) -> Nothing
+  (_, Right s) -> Just $ flatten s
 
 readSugarListFromFile :: FilePath -> IO (Maybe Sugar)
 readSugarListFromFile path = do
@@ -127,6 +127,6 @@ readSugarListFromFile path = do
   return $ parseSugarListFromText content
 
 parseSugarListFromText :: Text -> Maybe Sugar
-parseSugarListFromText t = case P.runParser sugarNoBracketsListP "" t of
-  Left _ -> Nothing
-  Right s -> Just s
+parseSugarListFromText t = case runParser sugarParseTopLevel (psSteps $ sugarLexerState (T.unpack t)) of
+  (_, Left _) -> Nothing
+  (_, Right s) -> Just $ flatten s

@@ -96,6 +96,9 @@ sugarParseUnit = do
     else
       empty
 
+sugarParseTopLevel :: Parser ScanStep
+sugarParseTopLevel = sugarParseTopLevelMap
+
 sugarParseMap :: Parser ScanStep
 sugarParseMap = do
   (sl, _) <- token Token'OpenCurl
@@ -104,6 +107,17 @@ sugarParseMap = do
   note <- sugarParseNote
   let tkn = Scan'Map elems note
   pure (sl, tkn)
+
+sugarParseTopLevelMap :: Parser ScanStep
+sugarParseTopLevelMap = do
+  elems <- many ((,) <$> sugarParse <*> sugarParse)
+  let tkn = Scan'Map elems Nothing
+  case elems of
+    (((sl,_), _):_) -> return (sl, tkn)
+    [] -> return (SourceLocation 0 0, tkn)
+
+sugarParseList :: Parser ScanStep
+sugarParseList = try sugarParseSquareList <|> sugarParseParenList
 
 sugarParseSquareList :: Parser ScanStep
 sugarParseSquareList = do
