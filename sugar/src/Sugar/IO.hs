@@ -23,7 +23,6 @@ import Data.Char -- (isSeparator)
 
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
-import qualified Text.Megaparsec as P
 
 import Sugar.Types
 import Sugar.Parser

@@ -1,17 +1,20 @@
 # Sugar
 
-Legible data
+Sugar is a general purpose and legible data language.
 
-🚧 API will break
+#### Basic idea
 
+One type of 4 values.
+
+```
+sugar ::= unit<sugar?> | text<sugar?> | {sugar:sugar}<sugar?> | [sugar]<sugar?>
+```
 ___
 
 ### Example
 
 ```racket
-; This is a comment
-; This snippet shows the top-level map of key-value pairs.
-; It is the default.
+; Top-level are key-value pairs by default.
 
 ; key0 and key1 are text types. value0 and "value one within..." are text types too.
 key0 value0
