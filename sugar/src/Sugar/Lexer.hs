@@ -1,10 +1,6 @@
 {-# LANGUAGE TupleSections, OverloadedStrings #-}
 module Sugar.Lexer where
 
-import Control.Monad
-import Control.Applicative
-import Data.Void (Void)
-import Data.Text (Text)
 import Data.Char
 import Safe.Exact (splitAtExactMay)
 

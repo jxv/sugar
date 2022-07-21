@@ -3,10 +3,6 @@ module Sugar.Parser where
 
 import Control.Monad
 import Control.Applicative
-import Data.Void (Void)
-import Data.Text (Text)
-import Data.Char
-import Safe.Exact (splitAtExactMay)
 
 import qualified Data.Text as T
 
@@ -14,13 +10,14 @@ import Sugar.Types
 import Sugar.Lexer
 
 data Scan
-  = Scan'Unit (Maybe ScanStep)
-  | Scan'String String (Maybe ScanStep)
-  | Scan'List [ScanStep] Wrap (Maybe ScanStep)
-  | Scan'Map [(ScanStep,ScanStep)] (Maybe ScanStep)
+  = Scan'Unit ScanNote
+  | Scan'String String ScanNote
+  | Scan'List [ScanStep] Wrap ScanNote
+  | Scan'Map [(ScanStep,ScanStep)] ScanNote
   deriving (Show, Eq)
 
 type ScanStep = (SourceLocation, Scan)
+type ScanNote = Maybe [ScanStep]
 type ParseError = (Maybe SourceLocation, String)
 
 newtype Parser a = Parser
@@ -44,7 +41,6 @@ instance Alternative Parser where
     success -> success
 
 instance Monad Parser where
-  return a = Parser $ \ts -> (ts, Right a)
   (Parser p) >>= f = Parser $ \ts -> let (ts',x) = p ts in case x of
     Left a -> (ts', Left a)
     Right b -> runParser (f b) ts'
@@ -53,10 +49,10 @@ instance Monad Parser where
 
 flatten :: ScanStep -> Sugar
 flatten (_, s) = case s of
-  Scan'Unit note -> Sugar'Unit (flatten <$> note)
-  Scan'String str note -> Sugar'Text (T.pack str) (flatten <$> note)
-  Scan'List elems wrap note -> Sugar'List (flatten <$> elems) wrap (flatten <$> note)
-  Scan'Map elems note -> Sugar'Map ((\(x,y) -> (flatten x, flatten y)) <$> elems) (flatten <$> note)
+  Scan'Unit note -> Sugar'Unit (fmap flatten <$> note)
+  Scan'String str note -> Sugar'Text (T.pack str) (fmap flatten <$> note)
+  Scan'List elems wrap note -> Sugar'List (flatten <$> elems) wrap (fmap flatten <$> note)
+  Scan'Map elems note -> Sugar'Map ((\(x,y) -> (flatten x, flatten y)) <$> elems) (fmap flatten <$> note)
 
 --
 
@@ -75,13 +71,13 @@ sugarParse = do
 sugarParseUnexpected :: TokenStep -> Parser ScanStep
 sugarParseUnexpected (loc, tkn) = Parser $ \ts -> (ts, Left (Just loc, "Unexpected: " ++ show tkn))
 
-sugarParseNote :: Parser (Maybe ScanStep)
+sugarParseNote :: Parser (Maybe [ScanStep])
 sugarParseNote = do
   tkn' <- tryPeek
   case tkn' of
     Nothing -> return Nothing
     Just (_,tkn) -> case tkn of
-      Token'OpenAngle -> fmap pure $ between (token Token'OpenAngle) (token Token'CloseAngle) sugarParse
+      Token'OpenAngle -> fmap pure $ between (token Token'OpenAngle) (token Token'CloseAngle) (many sugarParse)
       _ -> pure Nothing
 
 sugarParseUnit :: Parser ScanStep

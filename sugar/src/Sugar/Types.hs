@@ -41,7 +41,7 @@ data Wrap
   | Wrap'Paren
   deriving (Eq, Show, Generic)
 
-type Note = Maybe Sugar
+type Note = Maybe [Sugar]
 
 --
 

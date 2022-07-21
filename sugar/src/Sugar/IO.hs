@@ -99,7 +99,7 @@ minifyPrint (Sugar'Map m note) = "{" <> T.intercalate " " (map minifyPrint xs) <
 
 minifyPrintNote :: Note -> Text
 minifyPrintNote Nothing = ""
-minifyPrintNote (Just s) = "<" <> minifyPrint s <> ">"
+minifyPrintNote (Just xs) = "<" <> T.intercalate " " (map minifyPrint xs) <> ">"
 
 sanitizeText :: Text -> Text
 sanitizeText t

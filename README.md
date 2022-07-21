@@ -32,7 +32,7 @@ key3 (nested [list of values])
 key4 {keyA valueA keyB valueB}
 key5 {keyA {nestedKey nestedValue} keyB valueB}
 
-#| Key aren't limited to text types. Lists can be used as the key.
+#| Keys aren't limited to text types. Lists can be used as the key.
    Maps can also be used as the key. |#
 (list as keys) value
 {id0 value0 id1 value1} value
@@ -40,7 +40,7 @@ key5 {keyA {nestedKey nestedValue} keyB valueB}
 ; A note can annotate any data type by immediately following it.
 ; And a note captures any data type.
 key6<note> value6<"note as text again">
-key7<(can be a list)> value7<{or be a key value pair}>
+key7<can be (a list)> value7<{or be a key value pair}>
 {key8 key9}<still-works-here> {and here with unit}<()>
 ```
 
