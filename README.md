@@ -1,8 +1,12 @@
-# Sugar
+
+![Logo](./assets/sugar_logo.svg)
+
 
 Sugar is a general purpose and legible data language.
 
-#### Basic idea
+---
+
+### Basic idea
 
 One type of 4 values.
 
@@ -11,7 +15,7 @@ sugar ::= unit<sugar?> | text<sugar?> | {sugar:sugar}<sugar?> | [sugar]<sugar?>
 ```
 ___
 
-### Example
+### Full example
 
 ```racket
 ; Top-level are key-value pairs by default.

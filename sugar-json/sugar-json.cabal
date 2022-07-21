@@ -44,11 +44,11 @@ library
     , vector
   default-language: Haskell2010
 
-test-suite sugar-json-test-suite
+tests sugar-json-tests
   type: exitcode-stdio-1.0
   main-is: Main.hs
   hs-source-dirs:
-      test-suite
+      tests
   ghc-options: -Wall -rtsopts -threaded -with-rtsopts=-N
   build-depends:
       base
