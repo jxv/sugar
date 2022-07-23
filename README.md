@@ -2,7 +2,7 @@
 ![Logo](./assets/sugar_logo.svg)
 
 
-Sugar is a general purpose and legible data language.
+Sugar is a general purpose and legible data language. Alternative to: JSON, YAML, TOML, et cetera
 
 ---
 
@@ -18,9 +18,9 @@ ___
 ### Full example
 
 ```racket
-; Top-level are key-value pairs by default.
+; Top-level is a map.
 
-; key0 and key1 are text types. value0 and "value one within..." are text types too.
+; `key0` and `key1` are text types. `value0` and "value one within..." are text types too.
 key0 value0
 key1 "value one within quotes for spaces"
 

@@ -49,32 +49,32 @@ sugarLexerState s =
     initLexerState :: LexerState
     initLexerState = LexerState [] (SourceLocation 0 0)
 
-incrCol :: SourceLocation -> SourceLocation
-incrCol sl = sl { slColumn = slColumn sl + 1 }
+incrColLoc :: SourceLocation -> SourceLocation
+incrColLoc sl = sl { slColumn = slColumn sl + 1 }
 
-stepCol :: Int -> SourceLocation -> SourceLocation
-stepCol n sl = sl { slColumn = slColumn sl + n }
+stepColLoc :: Int -> SourceLocation -> SourceLocation
+stepColLoc n sl = sl { slColumn = slColumn sl + n }
 
-nextLine :: SourceLocation -> SourceLocation
-nextLine sl = sl { slLine = slLine sl + 1, slColumn = 0 }
+nextLineLoc :: SourceLocation -> SourceLocation
+nextLineLoc sl = sl { slLine = slLine sl + 1, slColumn = 0 }
 
-incrCol' :: LexerState -> LexerState
-incrCol' ps = ps { psLocation = incrCol $ psLocation ps }
+incrColState :: LexerState -> LexerState
+incrColState ps = ps { psLocation = incrColLoc $ psLocation ps }
 
-stepCol' :: Int -> LexerState -> LexerState
-stepCol' n ps = ps { psLocation = stepCol n $ psLocation ps }
+stepColState :: Int -> LexerState -> LexerState
+stepColState n ps = ps { psLocation = stepColLoc n $ psLocation ps }
 
-nextLine' :: LexerState -> LexerState
-nextLine' ps = ps { psLocation = nextLine $ psLocation ps }
+nextLineState :: LexerState -> LexerState
+nextLineState ps = ps { psLocation = nextLineLoc $ psLocation ps }
 
 stepLoc :: String -> SourceLocation -> SourceLocation
 stepLoc [] loc = loc
 stepLoc (x:xs) loc
-  | x == '\n' = stepLoc xs (nextLine loc)
-  | otherwise = stepLoc xs (incrCol loc) -- assuming non-zero width characters
+  | x == '\n' = stepLoc xs (nextLineLoc loc)
+  | otherwise = stepLoc xs (incrColLoc loc) -- assuming non-zero width characters
 
-stepLoc' :: String -> LexerState -> LexerState
-stepLoc' s ps = ps { psLocation = stepLoc s $ psLocation ps }
+stepLocState :: String -> LexerState -> LexerState
+stepLocState s ps = ps { psLocation = stepLoc s $ psLocation ps }
 
 lastToken :: LexerState -> Maybe Token
 lastToken ps = case psSteps ps of
@@ -99,8 +99,8 @@ stepReadSugarString' s ps t = case t of
 normalStepReadSugarString :: String -> LexerState -> (String, LexerState)
 normalStepReadSugarString [] ps = ([], ps)
 normalStepReadSugarString s@(c:cs) ps
-  | c == '\n' = (cs, nextLine' ps)
-  | isSpace c = (cs, incrCol' ps)
+  | c == '\n' = (cs, nextLineState ps)
+  | isSpace c = (cs, incrColState ps)
   | otherwise = case c of
     '{' -> (cs, step Token'OpenCurl)
     '}' -> (cs, step Token'CloseCurl)
@@ -114,10 +114,10 @@ normalStepReadSugarString s@(c:cs) ps
     ';' -> (cs, step Token'SingleLineComment)
     _ -> case splitAtExactMay 2 s of
       Just ("#|", s') ->
-        (s', stepCol' 2 $ ps{psSteps = (psLocation ps, Token'MultiLineCommentStart) : psSteps ps})
+        (s', stepColState 2 $ ps{psSteps = (psLocation ps, Token'MultiLineCommentStart) : psSteps ps})
       _ -> (s, ps { psSteps = (psLocation ps, Token'StringStart) : psSteps ps })
     where
-      step t = (incrCol' ps) { psSteps = (psLocation ps, t) : psSteps ps }
+      step t = (incrColState ps) { psSteps = (psLocation ps, t) : psSteps ps }
 
 prependStep :: TokenStep -> LexerState -> LexerState
 prependStep s ps = ps { psSteps = s : psSteps ps }
@@ -125,7 +125,7 @@ prependStep s ps = ps { psSteps = s : psSteps ps }
 stepReadString :: String -> LexerState -> (String, LexerState)
 stepReadString s ps = (s', ps')
   where
-    ps' = stepCol' (length str) $ prependStep step ps
+    ps' = stepColState (length str) $ prependStep step ps
     step = (psLocation ps, Token'String str)
     (str, s') = span2
       (\c c' -> not $ isSpace c || isReservedChar c || (c == '#' && c' == Just '|'))
@@ -144,16 +144,16 @@ span2 f xs@(x:y:z)
 stepSingleLineComment :: String -> LexerState -> (String, LexerState)
 stepSingleLineComment s ps = (s', ps')
   where
-    ps' = stepCol' (length str) $ prependStep step ps
+    ps' = stepColState (length str) $ prependStep step ps
     step = (psLocation ps, Token'String str)
     (str, s') = span (== '\n') s
 
 stepMultiLineComment :: String -> LexerState -> (String, LexerState)
 stepMultiLineComment s ps =  case span2ExactSkip (\c c' -> c == '|' && c' == '#') s of
-  Nothing -> ("", stepLoc' s ps) -- failed to consume end of comment marker
+  Nothing -> ("", stepLocState s ps) -- failed to consume end of comment marker
   Just (str, s') -> let
     step = (psLocation ps, Token'MultiLineCommentEnd)
-    ps' = stepLoc' (str ++ "|#") $ prependStep step ps
+    ps' = stepLocState (str ++ "|#") $ prependStep step ps
     in (s', ps')
 
 span2ExactSkip :: (a -> a -> Bool) -> [a] -> Maybe ([a], [a])
@@ -166,20 +166,20 @@ span2ExactSkip f (x:y:z)
 stepQuotedStart :: String -> LexerState -> (String, LexerState)
 stepQuotedStart s ps = (s', ps')
   where
-    ps' = stepCol' (length str) $ prependStep step ps
+    ps' = stepColState (length str) $ prependStep step ps
     step = (loc, Token'QuotedString str)
     (loc, str, s') = spanWithEscape (psLocation ps) s
 
 spanWithEscape :: SourceLocation -> String -> (SourceLocation, String, String)
 spanWithEscape loc [] = (loc, [],[])
-spanWithEscape loc (x:[]) = if x == '"' then (incrCol loc, [],[x]) else (loc, [x],[])
+spanWithEscape loc (x:[]) = if x == '"' then (incrColLoc loc, [],[x]) else (loc, [x],[])
 spanWithEscape loc xs@(x:y:z) = case x of
-  '"' -> (incrCol loc, [],xs)
+  '"' -> (incrColLoc loc, [],xs)
   '\\' -> case spanWithEscape loc z of
-    (loc', ys,zs) -> (incrCol loc', x:y:ys, zs)
-  '\n' -> let (loc', ys,zs) = spanWithEscape loc (y:z) in (nextLine loc', x:ys, zs)
-  _ -> let (loc', ys,zs) = spanWithEscape loc (y:z) in (incrCol loc', x:ys, zs)
+    (loc', ys,zs) -> (incrColLoc loc', x:y:ys, zs)
+  '\n' -> let (loc', ys,zs) = spanWithEscape loc (y:z) in (nextLineLoc loc', x:ys, zs)
+  _ -> let (loc', ys,zs) = spanWithEscape loc (y:z) in (incrColLoc loc', x:ys, zs)
 
 stepQuoteString :: String -> LexerState -> (String, LexerState)
-stepQuoteString ('"':xs) ps = (xs, incrCol' $ prependStep (psLocation ps, Token'QuoteEnd) ps)
+stepQuoteString ('"':xs) ps = (xs, incrColState $ prependStep (psLocation ps, Token'QuoteEnd) ps)
 stepQuoteString xs ps = normalStepReadSugarString xs ps -- Something went wrong, but keep parsing.
