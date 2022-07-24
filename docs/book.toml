@@ -1,0 +1,6 @@
+[book]
+authors = ["jxv"]
+language = "en"
+multilingual = false
+src = "src"
+title = "Sugar Documentation"
