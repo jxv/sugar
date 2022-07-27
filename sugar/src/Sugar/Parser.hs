@@ -66,7 +66,8 @@ sugarParse = do
     Token'OpenSquare -> sugarParseSquareList
     Token'QuoteStart -> sugarParseQuote
     Token'StringStart -> sugarParseText
-    Token'SingleLineComment -> token Token'SingleLineComment *> ignoreUntilNewLine loc *> sugarParse
+    Token'SingleLineComment -> nextToken *> ignoreUntilNewLine loc *> sugarParse
+    Token'MultiLineCommentStart -> nextToken *> ignoreUntilMultilineCommentEnd 0 *> sugarParse
     _ -> sugarParseUnexpected (loc, tkn)
 
 ignoreUntilNewLine :: SourceLocation -> Parser ()
@@ -78,8 +79,22 @@ ignoreUntilNewLine sl = do
       then nextToken *> ignoreUntilNewLine loc
       else return ()
 
+ignoreUntilMultilineCommentEnd :: Int -> Parser ()
+ignoreUntilMultilineCommentEnd nested = do
+  tkn' <- tryPeek
+  case tkn' of
+    Nothing -> sugarParseExpected "`|#` to close multi-line comment"
+    Just (_,Token'MultiLineCommentStart) -> nextToken *> ignoreUntilMultilineCommentEnd (nested + 1)
+    Just (_,Token'MultiLineCommentEnd) -> do
+      void nextToken
+      when (nested > 0) $ ignoreUntilMultilineCommentEnd (nested - 1)
+    Just (_,_) -> nextToken *> ignoreUntilMultilineCommentEnd nested
+
 sugarParseUnexpected :: TokenStep -> Parser ScanStep
 sugarParseUnexpected (loc, tkn) = Parser $ \ts -> (ts, Left (Just loc, "Unexpected: " ++ show tkn))
+
+sugarParseExpected :: String -> Parser ()
+sugarParseExpected expected =  Parser $ \ts -> (ts, Left (Nothing, "Expected: " ++ expected))
 
 sugarParseNote :: Parser (Maybe [ScanStep])
 sugarParseNote = do
