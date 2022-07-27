@@ -19,7 +19,7 @@ module Sugar.IO
 
 import Data.Text (Text)
 import Data.Maybe (isNothing)
-import Data.Char -- (isSeparator)
+import Data.Char (isSeparator)
 
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
