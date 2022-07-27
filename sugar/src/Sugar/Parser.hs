@@ -1,4 +1,4 @@
-{-# LANGUAGE TupleSections, DeriveGeneric, OverloadedStrings, CPP #-}
+{-# LANGUAGE TupleSections, DeriveGeneric, OverloadedStrings, CPP, NamedFieldPuns #-}
 module Sugar.Parser where
 
 import Control.Monad
@@ -66,7 +66,17 @@ sugarParse = do
     Token'OpenSquare -> sugarParseSquareList
     Token'QuoteStart -> sugarParseQuote
     Token'StringStart -> sugarParseText
+    Token'SingleLineComment -> token Token'SingleLineComment *> ignoreUntilNewLine loc *> sugarParse
     _ -> sugarParseUnexpected (loc, tkn)
+
+ignoreUntilNewLine :: SourceLocation -> Parser ()
+ignoreUntilNewLine sl = do
+  tkn' <- tryPeek
+  case tkn' of
+    Nothing -> return ()
+    Just (loc,_) -> if slLine loc == slLine sl
+      then nextToken *> ignoreUntilNewLine loc
+      else return ()
 
 sugarParseUnexpected :: TokenStep -> Parser ScanStep
 sugarParseUnexpected (loc, tkn) = Parser $ \ts -> (ts, Left (Just loc, "Unexpected: " ++ show tkn))
@@ -178,6 +188,11 @@ tryPeek :: Parser (Maybe TokenStep)
 tryPeek = Parser $ \ts -> case ts of
   [] -> (ts, Right Nothing)
   (x:_) -> (ts, Right $ Just x)
+
+nextToken :: Parser TokenStep
+nextToken = Parser $ \ts -> case ts of
+  [] -> ([], Left (Nothing, "nextToken"))
+  (x:xs) -> (xs, Right x)
 
 between :: Applicative m => m open -> m close -> m a -> m a
 between open close p = open *> p <* close
