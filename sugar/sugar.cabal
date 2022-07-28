@@ -1,6 +1,6 @@
 name: sugar
 version: 0.0.0.2
-synopsis: A general purpose and legible data language. Alternative to: JSON, YAML, TOML, et cetera.
+synopsis: A general purpose data language for humans. Alternative to: JSON, YAML, TOML, et cetera.
 homepage: https://github.com/jxv/sugar#readme
 description: Please see the README on GitHub at <https://github.com/jxv/sugar#readme>
 category: Text, Configuration
