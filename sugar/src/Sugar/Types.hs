@@ -139,9 +139,9 @@ instance FromSugar Text where
   parseSugar _ = Nothing
 
 instance FromSugar Bool where
-  parseSugar s = fmap
-    (\n -> if (n :: Integer) /= 0 then True else False)
-    (readSugarMay s)
+  parseSugar (Sugar'Text "#t" _) = Just True
+  parseSugar (Sugar'Text "#f" _) = Just False
+  parseSugar _ = Nothing
 
 instance FromSugar Integer where parseSugar = readSugarMay
 instance FromSugar Int where parseSugar = readSugarMay
@@ -185,7 +185,7 @@ instance (ToSugar a, ToSugar b, ToSugar c) => ToSugar (a,b,c) where
   toSugar (a,b,c) = Sugar'List [toSugar a, toSugar b, toSugar c] Wrap'Paren Nothing
 
 instance ToSugar Bool where
-  toSugar s = toSugar (if s then 1 else 0 :: Integer)
+  toSugar s = toSugar (if s then "#t" else "#f" :: Text)
 
 instance ToSugar Integer where toSugar = sugarShow
 instance ToSugar Int where toSugar = sugarShow
