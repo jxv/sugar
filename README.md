@@ -17,8 +17,6 @@ ___
 
 ### Quick examples
 
-More are found [here](https://github.com/jxv/sugar/tree/main/examples).
-
 `Text` to `Text` pairs
 
 ```racket
@@ -63,6 +61,8 @@ key6<note> value6<"note as text again">
 key7<can be (a list)> value7<{or be a key value pair}>
 {key8 key9}<still-works-here> {and here with unit}<()>
 ```
+
+More examples are found [here](https://github.com/jxv/sugar/tree/main/examples).
 
 ---
 
