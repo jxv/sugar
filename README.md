@@ -84,3 +84,13 @@ _\*Notice the lack of number and boolean types. Unit can be thought of as null._
 | ---- | ------- |
 | Single-line | `; comment` |
 | Multi-line | ```#\| comment content \|#``` |
+
+---
+
+### Other tips
+
+* Top level of a file is already a `Map` but without curly braces
+* `Map` can have non-unique keys
+* `Map` must maintain pair ordering
+* `()` is a `Unit` and `( )` is an empty `List` because of the whitespace
+* Formatting (or lack thereof) is a preference by the user
