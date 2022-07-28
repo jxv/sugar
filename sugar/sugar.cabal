@@ -1,6 +1,6 @@
 name: sugar
 version: 0.0.0.2
-synopsis: Legible data
+synopsis: A general purpose and legible data language. Alternative to: JSON, YAML, TOML, et cetera.
 homepage: https://github.com/jxv/sugar#readme
 description: Please see the README on GitHub at <https://github.com/jxv/sugar#readme>
 category: Text, Configuration
@@ -46,7 +46,7 @@ library
     , vector
   default-language: Haskell2010
 
-tests sugar-tests
+test-suite sugar-tests
   type: exitcode-stdio-1.0
   main-is: Main.hs
   hs-source-dirs:
