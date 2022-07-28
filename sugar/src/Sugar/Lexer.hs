@@ -47,7 +47,7 @@ sugarLexerState s =
       [] -> ps
       _ -> go (stepReadSugarString s' ps)
     initLexerState :: LexerState
-    initLexerState = LexerState [] (SourceLocation 0 0)
+    initLexerState = LexerState [] (SourceLocation 1 1)
 
 incrColLoc :: SourceLocation -> SourceLocation
 incrColLoc sl = sl { slColumn = slColumn sl + 1 }
@@ -56,7 +56,7 @@ stepColLoc :: Int -> SourceLocation -> SourceLocation
 stepColLoc n sl = sl { slColumn = slColumn sl + n }
 
 nextLineLoc :: SourceLocation -> SourceLocation
-nextLineLoc sl = sl { slLine = slLine sl + 1, slColumn = 0 }
+nextLineLoc sl = sl { slLine = slLine sl + 1, slColumn = 1 }
 
 incrColState :: LexerState -> LexerState
 incrColState ps = ps { psLocation = incrColLoc $ psLocation ps }
@@ -146,7 +146,7 @@ stepSingleLineComment s ps = (s', ps')
   where
     ps' = stepColState (length str) $ prependStep step ps
     step = (psLocation ps, Lexeme'String str)
-    (str, s') = span (== '\n') s
+    (str, s') = span (/= '\n') s
 
 stepMultiLineComment :: String -> LexerState -> (String, LexerState)
 stepMultiLineComment s ps =  case span2ExactSkip (\c c' -> c == '|' && c' == '#') s of
