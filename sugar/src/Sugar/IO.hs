@@ -126,6 +126,6 @@ readSugarListFromFile path = do
   return $ parseSugarListFromText content
 
 parseSugarListFromText :: Text -> Maybe Sugar
-parseSugarListFromText t = case runParser sugarParseTopLevel (psSteps $ sugarLexerState (T.unpack t)) of
+parseSugarListFromText t = case runParser sugarParseList (psSteps $ sugarLexerState (T.unpack t)) of
   (_, Left _) -> Nothing
   (_, Right s) -> Just $ flatten s
