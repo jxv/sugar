@@ -1,8 +1,9 @@
 
 ![Logo](./assets/sugar_logo.svg)
 
-
 Sugar is a general purpose data language for humans. Alternative to: JSON, YAML, TOML, et cetera.
+
+[![Hackage](https://img.shields.io/hackage/v/sugar.svg)](http://hackage.haskell.org/package/sugar) [![Build Status](https://github.com/jxv/sugar/actions/workflows/main.yml/badge.svg?branch=main)](https://github.com/jxv/sugar/actions/workflows/main.yml)
 
 ---
 
