@@ -1,5 +1,16 @@
 {-# LANGUAGE TupleSections, DeriveGeneric, OverloadedStrings, CPP, NamedFieldPuns #-}
-module Sugar.Parser where
+module Sugar.Parser
+  ( Token(..)
+  , TokenStep
+  , TokenNote
+  , ParseError
+  , Parser(..)
+  , flatten
+  , sugarParse
+  , sugarParseTopLevel
+  , sugarParseMap
+  , sugarParseList
+  ) where
 
 import Control.Monad
 import Control.Applicative
@@ -217,6 +228,7 @@ try p = Parser $ \ts -> case runParser p ts of
   (_, Left a) -> (ts, Left a)
   (ts', Right b)  -> (ts', Right b)
 
+{-
 parseError :: String -> String -> Parser a
 parseError descr tag = Parser $ \ts -> case ts of
     [] -> (ts, Left $ (Nothing, msg))
@@ -227,3 +239,4 @@ parseError descr tag = Parser $ \ts -> case ts of
 choice :: String -> [Parser a] -> Parser a
 choice description = foldr (<|>) noMatch
   where noMatch = parseError description "no match"
+-}

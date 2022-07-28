@@ -1,0 +1,8 @@
+packages:
+  sugar
+  sugar-json
+  sugar-scheme
+
+package sugar
+package sugar-json
+package sugar-scheme

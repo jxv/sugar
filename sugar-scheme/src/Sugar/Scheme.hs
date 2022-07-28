@@ -1,5 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Sugar.Scheme where
+module Sugar.Scheme
+  ( toLispVal
+  ) where
   
 import Sugar
 import Language.Scheme.Types

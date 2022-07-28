@@ -1,5 +1,11 @@
 {-# LANGUAGE TupleSections, OverloadedStrings #-}
-module Sugar.Lexer where
+module Sugar.Lexer
+  ( LexerState(..)
+  , LexemeStep
+  , SourceLocation(..)
+  , Lexeme(..)
+  , sugarLexerState
+  ) where
 
 import Data.Char
 import Safe.Exact (splitAtExactMay)
