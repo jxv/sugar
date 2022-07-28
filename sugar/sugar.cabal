@@ -1,13 +1,13 @@
 name: sugar
 version: 0.0.1
-synopsis: A general purpose data language for humans. Alternative to: JSON, YAML, TOML, et cetera.
+synopsis: A general purpose data language for humans.
 homepage: https://github.com/jxv/sugar#readme
-description: Please see the README on GitHub at <https://github.com/jxv/sugar#readme>
+description: Alternative to: JSON, YAML, TOML, et cetera. Please see the README on GitHub at <https://github.com/jxv/sugar#readme>
 category: Text, Configuration
 bug-reports: https://github.com/jxv/sugar/issues
 author: Joe Vargas
 maintainer: Joe Vargas
-license: 0BSD
+license: OtherLicense
 license-file: LICENSE
 build-type: Simple
 cabal-version: 1.14
