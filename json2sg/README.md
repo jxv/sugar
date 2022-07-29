@@ -1,6 +1,6 @@
 # json2sg
 
-Lossy convert JSON to Sugar
+Lossy conversion from JSON to Sugar
 
 #### Usage
 
@@ -10,7 +10,7 @@ Pass JSON through `stdin` and export out Sugar through `stdout`
 json2sg < input.json > output.sg
 ```
 
-## Comparsion
+## Format comparsion
 
 JSON
 

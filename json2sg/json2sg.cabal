@@ -1,6 +1,6 @@
 name: json2sg
 version: 0.0.1
-synopsis: Lossy convert JSON to Sugar
+synopsis: Lossy conversion from JSON to Sugar
 homepage: https://github.com/jxv/sugar#readme
 description: Sugar is an alternative to: JSON, YAML, TOML, et cetera. Please see the README on GitHub at <https://github.com/jxv/sugar#readme>
 category: Text, Configuration
