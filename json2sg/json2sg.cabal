@@ -10,7 +10,7 @@ maintainer: Joe Vargas
 license: OtherLicense
 license-file: LICENSE
 build-type: Simple
-cabal-version: 1.14
+cabal-version: 2.0
 extra-source-files:
     CHANGELOG.md
     LICENSE
