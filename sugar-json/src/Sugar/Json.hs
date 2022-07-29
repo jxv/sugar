@@ -87,7 +87,7 @@ instance ToSugar SugarCube where
 
 instance ToSugarCube Json.Value where
   toSugarCube Json.Null = SugarCube'Unit
-  toSugarCube (Json.Bool b) = SugarCube'Text (T.pack $ show b)
+  toSugarCube (Json.Bool b) = SugarCube'Text (if b then "#t" else "#f")
   toSugarCube (Json.String t) = SugarCube'Text t
   toSugarCube (Json.Number n) = SugarCube'Text (showNumber n)
     where
