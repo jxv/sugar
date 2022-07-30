@@ -2,9 +2,11 @@ packages:
   sugar
   sugar-json
   sugar-scheme
+  sugar-data
   json2sg
 
 package sugar
 package sugar-json
 package sugar-scheme
+package sugar-data
 package json2sg

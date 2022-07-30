@@ -54,6 +54,7 @@ test-suite sugar-json-tests
       base
     , hspec
     , sugar
+    , sugar-json
     , tasty
     , tasty-hspec
   default-language: Haskell2010

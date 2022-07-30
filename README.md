@@ -1,7 +1,7 @@
 
 ![Logo](./assets/sugar_logo.svg)
 
-Sugar is a pretty sweet data language. Alternative to: JSON, YAML, TOML, et cetera.
+Sugar is a pretty, sweet data language. Alternative to: JSON, YAML, TOML, et cetera.
 
 [![Hackage](https://img.shields.io/hackage/v/sugar.svg)](http://hackage.haskell.org/package/sugar) [![Build Status](https://github.com/jxv/sugar/actions/workflows/main.yml/badge.svg?branch=main)](https://github.com/jxv/sugar/actions/workflows/main.yml)
 
@@ -21,7 +21,7 @@ ___
 `Text` to `Text` pairs
 
 ```racket
-; Top-level of file is a `Map`.
+; Top-level of a file is a `Map`.
 
 ; `key0` and `key1` are text types. `value0` and "value one within..." are text types too.
 key0 value0
