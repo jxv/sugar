@@ -59,4 +59,4 @@ jobs:
 
     - name: Documentation
       run: |
-        cabal haddock
+        cabal haddock all
