@@ -39,7 +39,7 @@ library json2sg-lib
   build-depends:
       base >=4.7 && <5
     , bytestring >= 0.11 && <0.12
-    , sugar == 0.0.1
+    , sugar == 0.0.1.1
     , sugar-json == 0.0.1.1
     , text
     , aeson

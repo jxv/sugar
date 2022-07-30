@@ -22,7 +22,7 @@ import Sugar.Lexer
 
 data Token
   = Token'Unit TokenNote
-  | Token'String String TokenNote
+  | Token'Text String TokenNote
   | Token'List [TokenStep] Wrap TokenNote
   | Token'Map [(TokenStep,TokenStep)] TokenNote
   deriving (Show, Eq)
@@ -61,7 +61,7 @@ instance Monad Parser where
 flatten :: TokenStep -> Sugar
 flatten (_, s) = case s of
   Token'Unit note -> Sugar'Unit (fmap flatten <$> note)
-  Token'String str note -> Sugar'Text (T.pack str) (fmap flatten <$> note)
+  Token'Text str note -> Sugar'Text (T.pack str) (fmap flatten <$> note)
   Token'List elems wrap note -> Sugar'List (flatten <$> elems) wrap (fmap flatten <$> note)
   Token'Map elems note -> Sugar'Map ((\(x,y) -> (flatten x, flatten y)) <$> elems) (fmap flatten <$> note)
 
@@ -175,7 +175,7 @@ sugarParseQuote = do
   s <- lexemeQuoteString
   void $ lexeme Lexeme'QuoteEnd
   note <- sugarParseNote
-  let tkn = Token'String s note
+  let tkn = Token'Text s note
   pure (sl, tkn)
 
 sugarParseText :: Parser TokenStep
@@ -183,7 +183,7 @@ sugarParseText = do
   (sl, _) <- lexeme Lexeme'StringStart
   s <- lexemeString
   note <- sugarParseNote
-  let tkn = Token'String s note
+  let tkn = Token'Text s note
   pure (sl, tkn)
 
 lexemeQuoteString :: Parser String

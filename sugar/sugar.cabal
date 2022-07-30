@@ -1,5 +1,5 @@
 name: sugar
-version: 0.0.1
+version: 0.0.1.1
 synopsis: A pretty, sweet data language
 homepage: https://github.com/jxv/sugar#readme
 description: Alternative to: JSON, YAML, TOML, et cetera. Please see the README on GitHub at <https://github.com/jxv/sugar#readme>

@@ -1,5 +1,19 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Sugar.Data where
+module Sugar.Data
+  ( Type(..)
+  , TypeRef(..)
+  , Ty(..)
+  , Rec(..)
+  , Mem(..)
+  , Adt(..)
+  , Cons(..)
+  , ConsValue(..)
+  , Err(..)
+  , Error(..)
+  , ParamFns(..)
+  , tokenToTypes
+  , tokenToType
+  ) where
 
 import qualified Data.Text as T
 import Data.Text (Text)
@@ -59,8 +73,8 @@ data ConsValue m
 --
 
 data Err e
-  = Err'Err e
-  | Err'TypesNeedMap
+  = Err'Info e
+  | Err'NotTopLevelMap
   | Err'TypeMismatch
   | Err'TypeRefMismatch
   | Err'TypeRefParamsMismatch
@@ -69,78 +83,77 @@ data Err e
   | Err'ConsMismatch
   deriving (Show, Eq)
 
+data Error e = Error
+  { errorLoc :: SourceLocation
+  , errorInfo :: Err e
+  } deriving (Show, Eq)
+
 data ParamFns a m c e = ParamFns
-  { paramFnType :: [Sugar] -> Either [Err e] a
-  , paramFnMem :: [Sugar] -> Either [Err e]  m
-  , paramFnCons :: [Sugar] -> Either [Err e]  c
+  { paramFnType :: [TokenStep] -> Either [Error e] a
+  , paramFnMem :: [TokenStep] -> Either [Error e]  m
+  , paramFnCons :: [TokenStep] -> Either [Error e]  c
   }
 
-sugarToTypes :: ParamFns a m c e -> Sugar -> Either [Err e] [Type a m c]
-sugarToTypes fns (Sugar'Map ts _) = mapWithErrs (uncurry $ sugarToType fns) ts
-sugarToTypes _ _ = Left [Err'TypesNeedMap]
+tokenToTypes :: ParamFns a m c e -> TokenStep -> Either [Error e] [Type a m c]
+tokenToTypes fns (_, Token'Map ts _) = mapWithErrs (uncurry $ tokenToType fns) ts
+tokenToTypes _ (loc, _) = Left [Error loc Err'NotTopLevelMap]
 
-sugarToType :: ParamFns a m c e -> Sugar -> Sugar -> Either [Err e] (Type a m c)
-sugarToType fns n v =
-  case Type'Ty <$> sugarToTy fns n v of
+tokenToType :: ParamFns a m c e -> TokenStep -> TokenStep -> Either [Error e] (Type a m c)
+tokenToType fns n v =
+  case Type'Ty <$> tokenToTy fns n v of
     Right ty -> pure ty
-    Left tyErrs -> case Type'Rec <$> sugarToRec fns n v of
+    Left tyErrs -> case Type'Rec <$> tokenToRec fns n v of
       Right rec -> pure rec
-      Left recErrs -> case Type'Adt <$> sugarToAdt fns n v of
+      Left recErrs -> case Type'Adt <$> tokenToAdt fns n v of
         Right adt -> pure adt
         Left adtErrs -> Left $ betterErrs (betterErrs tyErrs recErrs) adtErrs
 
-betterErrs :: [Err e] -> [Err e] -> [Err e]
-betterErrs [Err'TypeMismatch] ys = ys
-betterErrs xs [Err'TypeMismatch] = xs
+betterErrs :: [Error e] -> [Error e] -> [Error e]
+betterErrs [Error _ Err'TypeMismatch] ys = ys
+betterErrs xs [Error _ Err'TypeMismatch] = xs
 betterErrs _ ys = ys -- FIXME: May not be the best fall-through approach
 
-sugarTypeRef :: Sugar -> Either [Err e] TypeRef
-sugarTypeRef (Sugar'Text name Nothing) = Right $ TypeRef name []
-sugarTypeRef (Sugar'Text name (Just params)) = TypeRef name <$> (mapWithErrs sugarTypeRef params)
-sugarTypeRef _ = Left [Err'TypeRefMismatch]
+tokenTypeRef :: TokenStep -> Either [Error e] TypeRef
+tokenTypeRef (_, Token'Text name Nothing) = Right $ TypeRef (T.pack name) []
+tokenTypeRef (_, Token'Text name (Just params)) = TypeRef (T.pack name) <$> (mapWithErrs tokenTypeRef params)
+tokenTypeRef (loc, _) = Left [Error loc Err'TypeRefMismatch]
 
-sugarTypeRefParams :: Sugar -> Either [Err e] [TypeRef]
-sugarTypeRefParams (Sugar'Text name Nothing) = Right [TypeRef name []]
-sugarTypeRefParams (Sugar'Text name (Just params)) = (\x -> [TypeRef name x]) <$> (mapWithErrs sugarTypeRef params)
-sugarTypeRefParams (Sugar'List params _ Nothing) = mapWithErrs sugarTypeRef params
-sugarTypeRefParams _ = Left [Err'TypeRefParamsMismatch]
+tokenToTy :: ParamFns a m c e -> TokenStep -> TokenStep -> Either [Error e] (Ty a)
+tokenToTy fns (_, Token'Text t params) v = Ty (T.pack t) <$> tokenParams (paramFnType fns) params <*> tokenTypeRef v
+tokenToTy _ _ (loc, _) = Left [Error loc Err'TypeMismatch]
 
-sugarToTy :: ParamFns a m c e -> Sugar -> Sugar -> Either [Err e] (Ty a)
-sugarToTy fns (Sugar'Text t params) v = Ty t <$> sugarParams (paramFnType fns) params <*> sugarTypeRef v
-sugarToTy _ _ _ = Left [Err'TypeMismatch]
+tokenToRec :: ParamFns a m c e -> TokenStep -> TokenStep -> Either [Error e] (Rec a m)
+tokenToRec fns (_, Token'Text name params) v = Rec (T.pack name) <$> tokenParams (paramFnType fns) params <*> tokenToMems fns v
+tokenToRec  _ _ (loc, _) = Left [Error loc Err'TypeMismatch]
 
-sugarToRec :: ParamFns a m c e -> Sugar -> Sugar -> Either [Err e] (Rec a m)
-sugarToRec fns (Sugar'Text name params) v = Rec name <$> sugarParams (paramFnType fns) params <*> sugarToMems fns v
-sugarToRec  _ _ _ = Left [Err'TypeMismatch]
+tokenToMems :: ParamFns a m c e -> TokenStep -> Either [Error e] [Mem m]
+tokenToMems fns (_, Token'Map mems Nothing) = tokenToMems' fns mems
+tokenToMems _ (loc, _) = Left [Error loc Err'MemsMismatch]
 
-sugarToMems :: ParamFns a m c e -> Sugar -> Either [Err e] [Mem m]
-sugarToMems fns (Sugar'Map mems Nothing) = sugarToMems' fns mems
-sugarToMems _ _ = Left [Err'MemsMismatch]
+tokenToMems' :: ParamFns a m c e -> [(TokenStep,TokenStep)] -> Either [Error e] [Mem m]
+tokenToMems' fns = mapWithErrs (uncurry $ tokenToMem fns)
 
-sugarToMems' :: ParamFns a m c e -> [(Sugar,Sugar)] -> Either [Err e] [Mem m]
-sugarToMems' fns = mapWithErrs (uncurry $ sugarToMem fns)
+tokenToMem :: ParamFns a m c e -> TokenStep -> TokenStep -> Either [Error e] (Mem m)
+tokenToMem fns (_, Token'Text name params) s = Mem (T.pack name) <$> tokenParams (paramFnMem fns) params <*> tokenTypeRef s
+tokenToMem _ _ (loc, _) = Left [Error loc Err'MemMismatch]
 
-sugarToMem :: ParamFns a m c e -> Sugar -> Sugar -> Either [Err e] (Mem m)
-sugarToMem fns (Sugar'Text name params) s = Mem name <$> sugarParams (paramFnMem fns) params <*> sugarTypeRef s
-sugarToMem _ _ _ = Left [Err'MemMismatch]
+tokenToAdt :: ParamFns a m c e -> TokenStep -> TokenStep -> Either [Error e] (Adt a m c)
+tokenToAdt fns (_, Token'Text name params) (_, Token'List conss _ Nothing) = Adt (T.pack name) <$> tokenParams (paramFnType fns) params <*> mapWithErrs (tokenToCons fns) conss
+tokenToAdt _ _ (loc, _) = Left [Error loc Err'TypeMismatch]
 
-sugarToAdt :: ParamFns a m c e -> Sugar -> Sugar -> Either [Err e] (Adt a m c)
-sugarToAdt fns (Sugar'Text name params) (Sugar'List conss _ Nothing) = Adt name <$> sugarParams (paramFnType fns) params <*> mapWithErrs (sugarToCons fns) conss
-sugarToAdt _ _ _ = Left [Err'TypeMismatch]
-
-sugarToCons :: ParamFns a m c e -> Sugar -> Either [Err e] (Cons m c)
-sugarToCons fns (Sugar'Text name params) =  Cons name <$> sugarParams (paramFnCons fns) params <*> pure ConsValue'None
-sugarToCons fns (Sugar'List [(Sugar'Text name Nothing)] _ params) = Cons name <$> sugarParams (paramFnCons fns) params <*> pure ConsValue'None
-sugarToCons fns (Sugar'List [(Sugar'Text name Nothing), (Sugar'Map mems Nothing)] _ params) = do
-  ms <- sugarToMems' fns mems
-  param <- sugarParams (paramFnCons fns) params
-  return . Cons name param $ if null ms
+tokenToCons :: ParamFns a m c e -> TokenStep -> Either [Error e] (Cons m c)
+tokenToCons fns (_, Token'Text name params) =  Cons (T.pack name) <$> tokenParams (paramFnCons fns) params <*> pure ConsValue'None
+tokenToCons fns (_, Token'List [(_, Token'Text name Nothing)] _ params) = Cons (T.pack name) <$> tokenParams (paramFnCons fns) params <*> pure ConsValue'None
+tokenToCons fns (_, Token'List [(_, Token'Text name Nothing), (_, Token'Map mems Nothing)] _ params) = do
+  ms <- tokenToMems' fns mems
+  param <- tokenParams (paramFnCons fns) params
+  return . Cons (T.pack name) param $ if null ms
     then ConsValue'None
     else ConsValue'Mems ms
-sugarToCons fns (Sugar'List ((Sugar'Text name Nothing):xs) _ params) = Cons name <$> sugarParams (paramFnCons fns) params <*> (ConsValue'TypeRef <$> mapWithErrs sugarTypeRef xs)
-sugarToCons _ _ = Left [Err'ConsMismatch]
+tokenToCons fns (_, (Token'List ((_, Token'Text name Nothing):xs) _ params)) = Cons (T.pack name) <$> tokenParams (paramFnCons fns) params <*> (ConsValue'TypeRef <$> mapWithErrs tokenTypeRef xs)
+tokenToCons _ (loc,_) = Left [Error loc Err'ConsMismatch]
 
-mapWithErrs :: (a -> Either [Err e] b) -> [a] -> Either [Err e] [b]
+mapWithErrs :: (a -> Either [Error e] b) -> [a] -> Either [Error e] [b]
 mapWithErrs _ [] = Right []
 mapWithErrs f (x:xs) = case f x of
   Left es -> case mapWithErrs f xs of
@@ -150,7 +163,7 @@ mapWithErrs f (x:xs) = case f x of
     Left es -> Left es
     Right ys -> Right $ y : ys
 
-sugarParams :: ([Sugar] -> Either [Err e] a) -> Maybe [Sugar] -> Either [Err e] (Maybe a)
-sugarParams f params = case params of
+tokenParams :: ([TokenStep] -> Either [Error e] a) -> Maybe [TokenStep] -> Either [Error e] (Maybe a)
+tokenParams f params = case params of
   Nothing -> pure Nothing
   Just ps -> Just <$> f ps
