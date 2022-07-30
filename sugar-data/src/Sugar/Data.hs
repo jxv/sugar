@@ -17,7 +17,6 @@ module Sugar.Data
 
 import qualified Data.Text as T
 import Data.Text (Text)
-import Data.String (IsString(..))
 import Sugar
 
 data Type a m c
@@ -29,39 +28,42 @@ data Type a m c
 data TypeRef = TypeRef
   { trName :: Text
   , trParams :: [TypeRef]
+  , trLoc :: SourceLocation
   } deriving (Show, Eq)
-
-instance IsString TypeRef where
-  fromString s = TypeRef (T.pack s) []
 
 data Ty a = Ty
   { tyName :: Text
   , tyParam :: Maybe a
   , tyType :: TypeRef
+  , tyLoc :: SourceLocation
   } deriving (Show, Eq)
 
 data Rec a m = Rec
   { recName :: Text
   , recParam :: Maybe a
   , recMems :: [Mem m]
+  , recLoc :: SourceLocation
   } deriving (Show, Eq)
 
 data Mem m = Mem
   { memLabel :: Text
   , memParam :: Maybe m
   , memType :: TypeRef
+  , memLoc :: SourceLocation
   } deriving (Show, Eq)
 
 data Adt a m c = Adt
   { adtName :: Text
   , adtParam :: Maybe a
   , adtCons :: [Cons m c]
+  , adtLoc :: SourceLocation
   } deriving (Show, Eq)
 
 data Cons m c = Cons
   { consTag :: Text
   , consParam :: Maybe c
   , consValue :: ConsValue m
+  , consLoc :: SourceLocation
   } deriving (Show, Eq)
 
 data ConsValue m
@@ -114,16 +116,16 @@ betterErrs xs [Error _ Err'TypeMismatch] = xs
 betterErrs _ ys = ys -- FIXME: May not be the best fall-through approach
 
 tokenTypeRef :: TokenStep -> Either [Error e] TypeRef
-tokenTypeRef (_, Token'Text name Nothing) = Right $ TypeRef (T.pack name) []
-tokenTypeRef (_, Token'Text name (Just params)) = TypeRef (T.pack name) <$> (mapWithErrs tokenTypeRef params)
+tokenTypeRef (loc, Token'Text name Nothing) = Right $ TypeRef (T.pack name) [] loc
+tokenTypeRef (loc, Token'Text name (Just params)) = TypeRef (T.pack name) <$> (mapWithErrs tokenTypeRef params) <*> pure loc
 tokenTypeRef (loc, _) = Left [Error loc Err'TypeRefMismatch]
 
 tokenToTy :: ParamFns a m c e -> TokenStep -> TokenStep -> Either [Error e] (Ty a)
-tokenToTy fns (_, Token'Text t params) v = Ty (T.pack t) <$> tokenParams (paramFnType fns) params <*> tokenTypeRef v
+tokenToTy fns (loc, Token'Text t params) v = Ty (T.pack t) <$> tokenParams (paramFnType fns) params <*> tokenTypeRef v <*> pure loc
 tokenToTy _ _ (loc, _) = Left [Error loc Err'TypeMismatch]
 
 tokenToRec :: ParamFns a m c e -> TokenStep -> TokenStep -> Either [Error e] (Rec a m)
-tokenToRec fns (_, Token'Text name params) v = Rec (T.pack name) <$> tokenParams (paramFnType fns) params <*> tokenToMems fns v
+tokenToRec fns (loc, Token'Text name params) v = Rec (T.pack name) <$> tokenParams (paramFnType fns) params <*> tokenToMems fns v <*> pure loc
 tokenToRec  _ _ (loc, _) = Left [Error loc Err'TypeMismatch]
 
 tokenToMems :: ParamFns a m c e -> TokenStep -> Either [Error e] [Mem m]
@@ -134,23 +136,27 @@ tokenToMems' :: ParamFns a m c e -> [(TokenStep,TokenStep)] -> Either [Error e] 
 tokenToMems' fns = mapWithErrs (uncurry $ tokenToMem fns)
 
 tokenToMem :: ParamFns a m c e -> TokenStep -> TokenStep -> Either [Error e] (Mem m)
-tokenToMem fns (_, Token'Text name params) s = Mem (T.pack name) <$> tokenParams (paramFnMem fns) params <*> tokenTypeRef s
+tokenToMem fns (loc, Token'Text name params) s = Mem (T.pack name) <$> tokenParams (paramFnMem fns) params <*> tokenTypeRef s <*> pure loc
 tokenToMem _ _ (loc, _) = Left [Error loc Err'MemMismatch]
 
 tokenToAdt :: ParamFns a m c e -> TokenStep -> TokenStep -> Either [Error e] (Adt a m c)
-tokenToAdt fns (_, Token'Text name params) (_, Token'List conss _ Nothing) = Adt (T.pack name) <$> tokenParams (paramFnType fns) params <*> mapWithErrs (tokenToCons fns) conss
+tokenToAdt fns (loc, Token'Text name params) (_, Token'List conss _ Nothing) = Adt (T.pack name) <$> tokenParams (paramFnType fns) params <*> mapWithErrs (tokenToCons fns) conss <*> pure loc
 tokenToAdt _ _ (loc, _) = Left [Error loc Err'TypeMismatch]
 
 tokenToCons :: ParamFns a m c e -> TokenStep -> Either [Error e] (Cons m c)
-tokenToCons fns (_, Token'Text name params) =  Cons (T.pack name) <$> tokenParams (paramFnCons fns) params <*> pure ConsValue'None
-tokenToCons fns (_, Token'List [(_, Token'Text name Nothing)] _ params) = Cons (T.pack name) <$> tokenParams (paramFnCons fns) params <*> pure ConsValue'None
-tokenToCons fns (_, Token'List [(_, Token'Text name Nothing), (_, Token'Map mems Nothing)] _ params) = do
+tokenToCons fns (loc, Token'Text name params) =  Cons (T.pack name) <$> tokenParams (paramFnCons fns) params <*> pure ConsValue'None <*> pure loc
+tokenToCons fns (loc, Token'List [(_, Token'Text name Nothing)] _ params) = Cons (T.pack name) <$> tokenParams (paramFnCons fns) params <*> pure ConsValue'None <*> pure loc
+tokenToCons fns (loc, Token'List [(_, Token'Text name Nothing), (_, Token'Map mems Nothing)] _ params) = do
   ms <- tokenToMems' fns mems
   param <- tokenParams (paramFnCons fns) params
-  return . Cons (T.pack name) param $ if null ms
-    then ConsValue'None
-    else ConsValue'Mems ms
-tokenToCons fns (_, (Token'List ((_, Token'Text name Nothing):xs) _ params)) = Cons (T.pack name) <$> tokenParams (paramFnCons fns) params <*> (ConsValue'TypeRef <$> mapWithErrs tokenTypeRef xs)
+  return $ Cons
+    (T.pack name)
+    param
+    (if null ms
+      then ConsValue'None
+      else ConsValue'Mems ms)
+    loc
+tokenToCons fns (loc, (Token'List ((_, Token'Text name Nothing):xs) _ params)) = Cons (T.pack name) <$> tokenParams (paramFnCons fns) params <*> (ConsValue'TypeRef <$> mapWithErrs tokenTypeRef xs) <*> pure loc
 tokenToCons _ (loc,_) = Left [Error loc Err'ConsMismatch]
 
 mapWithErrs :: (a -> Either [Error e] b) -> [a] -> Either [Error e] [b]
