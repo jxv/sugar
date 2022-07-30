@@ -37,7 +37,7 @@ library
     , ordered-containers
     , safe
     , scientific
-    , sugar == 0.0.1
+    , sugar == 0.0.1.1
     , text
     , text-conversions
     , unordered-containers
