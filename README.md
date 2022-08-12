@@ -72,9 +72,9 @@ More examples are found [here](https://github.com/jxv/sugar/tree/main/examples).
 | Type | Example |
 | ----- | ------------ |
 | Unit | `()` |
-| Text | `textWithoutSpace` or `text-with-dashes` or `"text with spaces"` |
-| List | `(item1 item2 item3)` with parens or `[item1 item2 item3]` with square-brackets |
-| Map | `{}` or `{key1 value1}` or `{key1 value1 key2 value2}` |
+| Text | `textWithoutSpace` or `text-with-dashes_and_underscores` or `"text with spaces"` |
+| List | `[item1 item2 item3]` or `(i1 i2 i3)` or `[i1, i2, i3]` or `[i1, i2, i3,]`|
+| Map | `{}` or `{key1 value1}` or `{k1 v1 k2 v2}` or `{k1 v1, k2 v2}` or `{k1 v1, k2 v2,}`|
 | Note | `()<note>` or `text<note note>` or`(a b c)<{note note}>` or `{k v}<note (a b c) () {et cetera}>` |
 
 _\*Notice the lack of number and boolean types. Unit can be thought of as null._
@@ -94,4 +94,5 @@ _\*Notice the lack of number and boolean types. Unit can be thought of as null._
 * `Map` can have non-unique keys
 * `Map` must maintain pair ordering
 * `()` is a `Unit` and `( )` is an empty `List` because of the whitespace
+* Each comma in `List` or `Map` is optional
 * Formatting (or lack thereof) is a preference by the user
