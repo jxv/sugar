@@ -34,6 +34,7 @@ data Lexeme
   | Lexeme'CloseSquare
   | Lexeme'OpenAngle
   | Lexeme'CloseAngle
+  | Lexeme'Comma
   | Lexeme'StringStart
   | Lexeme'String String
   | Lexeme'QuoteStart
@@ -116,6 +117,7 @@ normalStepReadSugarString s@(c:cs) ps
     ']' -> (cs, step Lexeme'CloseSquare)
     '<' -> (cs, step Lexeme'OpenAngle)
     '>' -> (cs, step Lexeme'CloseAngle)
+    ',' -> (cs, step Lexeme'Comma)
     '"' -> (cs, step Lexeme'QuoteStart)
     ';' -> (cs, step Lexeme'SingleLineComment)
     _ -> case splitAtExactMay 2 s of

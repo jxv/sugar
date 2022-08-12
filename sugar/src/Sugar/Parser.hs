@@ -134,7 +134,7 @@ sugarParseTopLevel = sugarParseTopLevelMap
 sugarParseMap :: Parser TokenStep
 sugarParseMap = do
   (sl, _) <- lexeme Lexeme'OpenCurl
-  elems <- many ((,) <$> sugarParse <*> sugarParse)
+  elems <- many ((,) <$> sugarParse <*> (sugarParse <* optional (try sugarParseComma)))
   void $ lexeme Lexeme'CloseCurl
   note <- sugarParseNote
   let tkn = Token'Map elems note
@@ -154,7 +154,7 @@ sugarParseList = try sugarParseSquareList <|> sugarParseParenList
 sugarParseSquareList :: Parser TokenStep
 sugarParseSquareList = do
   (sl, _) <- lexeme Lexeme'OpenSquare
-  elems <- many sugarParse
+  elems <- many (sugarParse <* optional (try sugarParseComma))
   void $ lexeme Lexeme'CloseSquare
   note <- sugarParseNote
   let tkn = Token'List elems Wrap'Square note
@@ -163,7 +163,7 @@ sugarParseSquareList = do
 sugarParseParenList :: Parser TokenStep
 sugarParseParenList = do
   (sl, _) <- lexeme Lexeme'OpenParen
-  elems <- many sugarParse
+  elems <- many (sugarParse <* optional sugarParseComma)
   void $ lexeme Lexeme'CloseParen
   note <- sugarParseNote
   let tkn = Token'List elems Wrap'Paren note
@@ -185,6 +185,11 @@ sugarParseText = do
   note <- sugarParseNote
   let tkn = Token'Text s note
   pure (sl, tkn)
+
+sugarParseComma :: Parser ()
+sugarParseComma = do
+  _ <- lexeme Lexeme'Comma
+  pure ()
 
 lexemeQuoteString :: Parser String
 lexemeQuoteString = Parser $ \ts -> case ts of
@@ -227,3 +232,4 @@ try :: Parser a -> Parser a
 try p = Parser $ \ts -> case runParser p ts of
   (_, Left a) -> (ts, Left a)
   (ts', Right b)  -> (ts', Right b)
+
