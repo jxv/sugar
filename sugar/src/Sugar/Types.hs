@@ -60,7 +60,7 @@ sugarShow :: Show a => a -> Sugar
 sugarShow s = Sugar'Text (T.pack $ show s) Nothing
 
 reservedChars :: [Char]
-reservedChars = ['\"','[',']','<','>','(',')','{','}',';']
+reservedChars = ['\"','[',']','<','>','(',')','{','}',';',',']
 
 --
 
