@@ -113,7 +113,7 @@ sugarParseNote = do
   case tkn' of
     Nothing -> return Nothing
     Just (_,tkn) -> case tkn of
-      Lexeme'OpenAngle -> fmap pure $ between (lexeme Lexeme'OpenAngle) (lexeme Lexeme'CloseAngle) (many sugarParse)
+      Lexeme'OpenAngle -> fmap pure $ between (lexeme Lexeme'OpenAngle) (lexeme Lexeme'CloseAngle) (many (sugarParse <* optional (try sugarParseComma)))
       _ -> pure Nothing
 
 sugarParseUnit :: Parser TokenStep

@@ -94,5 +94,5 @@ _\*Notice the lack of number and boolean types. Unit can be thought of as null._
 * `Map` can have non-unique keys
 * `Map` must maintain pair ordering
 * `()` is a `Unit` and `( )` is an empty `List` because of the whitespace
-* Each comma in `List` or `Map` is optional
+* Each comma in `List` or `Map` or `Note` is optional
 * Formatting (or lack thereof) is a preference by the user
