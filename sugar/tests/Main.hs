@@ -117,6 +117,30 @@ spec = parallel $ do
             ]
             Wrap'Square
             (Just [Sugar'List [] Wrap'Square Nothing]))
+          ,(Sugar'Unit Nothing
+           ,Sugar'List
+            [Sugar'Text "incididunt" Nothing
+            ,Sugar'Text "ut" (Just [Sugar'Text "labore" Nothing])
+            ,Sugar'Text "et" (Just [Sugar'Text "dolore" Nothing,Sugar'Text "magna" Nothing])
+            ]
+            Wrap'Square
+            (Just [Sugar'Text "a" Nothing,Sugar'Text "b" Nothing,Sugar'Text "c" Nothing]))
+          ,(Sugar'Unit Nothing
+           ,Sugar'List
+            [Sugar'Text "incididunt" Nothing
+            ,Sugar'Text "ut" (Just [Sugar'Text "labore" Nothing])
+            ,Sugar'Text "et" (Just [Sugar'Text "dolore" Nothing,Sugar'Text "magna" Nothing])
+            ]
+            Wrap'Square
+            (Just [Sugar'Text "a" Nothing,Sugar'Text "b" Nothing,Sugar'Text "c" Nothing]))
+          ,(Sugar'Unit Nothing
+           ,Sugar'List
+            [Sugar'Text "incididunt" Nothing
+            ,Sugar'Text "ut" (Just [Sugar'Text "labore" Nothing])
+            ,Sugar'Text "et" (Just [Sugar'Text "dolore" Nothing,Sugar'Text "magna" Nothing])
+            ]
+            Wrap'Square
+            (Just [Sugar'Text "a" Nothing,Sugar'Text "b" Nothing,Sugar'Text "c" Nothing]))
           ]
           Nothing
     actual `shouldBe` expected
