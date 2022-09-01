@@ -134,7 +134,9 @@ sugarParseTopLevel = sugarParseTopLevelMap
 sugarParseMap :: Parser TokenStep
 sugarParseMap = do
   (sl, _) <- lexeme Lexeme'OpenCurl
-  elems <- many ((,) <$> sugarParse <*> (sugarParse <* optional (try sugarParseComma)))
+  -- elems <- many ((,) <$> sugarParse <*> (sugarParse <* optional (try sugarParseComma))) -- No colon
+  elems <- many ((,) <$> (sugarParse <* sugarParseColon) <*> (sugarParse <* optional (try sugarParseComma))) -- Required colon
+  -- elems <- many ((,) <$> (sugarParse <* optional (try sugarParseColon)) <*> (sugarParse <* optional (try sugarParseComma))) -- Optional colon
   void $ lexeme Lexeme'CloseCurl
   note <- sugarParseNote
   let tkn = Token'Map elems note
@@ -142,7 +144,9 @@ sugarParseMap = do
 
 sugarParseTopLevelMap :: Parser TokenStep
 sugarParseTopLevelMap = do
-  elems <- many ((,) <$> sugarParse <*> sugarParse)
+  -- elems <- many ((,) <$> sugarParse <*> (sugarParse <* optional (try sugarParseComma))) -- No colon
+  elems <- many ((,) <$> (sugarParse <* sugarParseColon) <*> (sugarParse <* optional (try sugarParseComma))) -- Required colon
+  -- elems <- many ((,) <$> (sugarParse <* optional (try sugarParseColon)) <*> (sugarParse <* optional (try sugarParseComma))) -- Optional colon
   let tkn = Token'Map elems Nothing
   case elems of
     (((sl,_), _):_) -> return (sl, tkn)
@@ -189,6 +193,11 @@ sugarParseText = do
 sugarParseComma :: Parser ()
 sugarParseComma = do
   _ <- lexeme Lexeme'Comma
+  pure ()
+
+sugarParseColon :: Parser ()
+sugarParseColon = do
+  _ <- lexeme Lexeme'Colon
   pure ()
 
 lexemeQuoteString :: Parser String
