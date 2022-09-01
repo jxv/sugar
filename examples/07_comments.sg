@@ -1,9 +1,9 @@
-a b
+a: b
 ; comment
-c d
+c: d
 #| multi-line 
    comment |#
-e f
-g
+e: f
+g:
 ;
 h
