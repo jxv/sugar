@@ -16,15 +16,16 @@ import Control.Monad
 import Control.Applicative
 
 import qualified Data.Text as T
+import qualified Sugar.Types as Sg
 
-import Sugar.Types
+import Sugar.Types (Wrap(..))
 import Sugar.Lexer
 
 data Token
-  = Token'Unit TokenNote
-  | Token'Text String TokenNote
-  | Token'List [TokenStep] Wrap TokenNote
-  | Token'Map [(TokenStep,TokenStep)] TokenNote
+  = Unit TokenNote
+  | Text String TokenNote
+  | List [TokenStep] Wrap TokenNote
+  | Map [(TokenStep,TokenStep)] TokenNote
   deriving (Show, Eq)
 
 type TokenStep = (SourceLocation, Token)
@@ -58,12 +59,12 @@ instance Monad Parser where
 
 --
 
-flatten :: TokenStep -> Sugar
+flatten :: TokenStep -> Sg.Sugar
 flatten (_, s) = case s of
-  Token'Unit note -> Sugar'Unit (fmap flatten <$> note)
-  Token'Text str note -> Sugar'Text (T.pack str) (fmap flatten <$> note)
-  Token'List elems wrap note -> Sugar'List (flatten <$> elems) wrap (fmap flatten <$> note)
-  Token'Map elems note -> Sugar'Map ((\(x,y) -> (flatten x, flatten y)) <$> elems) (fmap flatten <$> note)
+  Unit note -> Sg.Unit (fmap flatten <$> note)
+  Text str note -> Sg.Text (T.pack str) (fmap flatten <$> note)
+  List elems wrap note -> Sg.List (flatten <$> elems) wrap (fmap flatten <$> note)
+  Map elems note -> Sg.Map ((\(x,y) -> (flatten x, flatten y)) <$> elems) (fmap flatten <$> note)
 
 --
 
@@ -71,14 +72,14 @@ sugarParse :: Parser TokenStep
 sugarParse = do
   (loc, tkn) <- peek
   case tkn of
-    Lexeme'Start -> sugarParse
-    Lexeme'OpenCurl -> sugarParseMap
-    Lexeme'OpenParen -> try sugarParseUnit <|> sugarParseParenList
-    Lexeme'OpenSquare -> sugarParseSquareList
-    Lexeme'QuoteStart -> sugarParseQuote
-    Lexeme'StringStart -> sugarParseText
-    Lexeme'SingleLineComment -> nextLexeme *> ignoreUntilNewLine loc *> sugarParse
-    Lexeme'MultiLineCommentStart -> nextLexeme *> ignoreUntilMultilineCommentEnd 0 *> sugarParse
+    Start -> sugarParse
+    OpenCurl -> sugarParseMap
+    OpenParen -> try sugarParseUnit <|> sugarParseParenList
+    OpenSquare -> sugarParseSquareList
+    QuoteStart -> sugarParseQuote
+    StringStart -> sugarParseText
+    SingleLineComment -> nextLexeme *> ignoreUntilNewLine loc *> sugarParse
+    MultiLineCommentStart -> nextLexeme *> ignoreUntilMultilineCommentEnd 0 *> sugarParse
     _ -> sugarParseUnexpected (loc, tkn)
 
 ignoreUntilNewLine :: SourceLocation -> Parser ()
@@ -95,8 +96,8 @@ ignoreUntilMultilineCommentEnd nested = do
   tkn' <- tryPeek
   case tkn' of
     Nothing -> sugarParseExpected "`|#` to close multi-line comment"
-    Just (_,Lexeme'MultiLineCommentStart) -> nextLexeme *> ignoreUntilMultilineCommentEnd (nested + 1)
-    Just (_,Lexeme'MultiLineCommentEnd) -> do
+    Just (_,MultiLineCommentStart) -> nextLexeme *> ignoreUntilMultilineCommentEnd (nested + 1)
+    Just (_,MultiLineCommentEnd) -> do
       void nextLexeme
       when (nested > 0) $ ignoreUntilMultilineCommentEnd (nested - 1)
     Just (_,_) -> nextLexeme *> ignoreUntilMultilineCommentEnd nested
@@ -113,17 +114,17 @@ sugarParseNote = do
   case tkn' of
     Nothing -> return Nothing
     Just (_,tkn) -> case tkn of
-      Lexeme'OpenAngle -> fmap pure $ between (lexeme Lexeme'OpenAngle) (lexeme Lexeme'CloseAngle) (many (sugarParse <* optional (try sugarParseComma)))
+      OpenAngle -> fmap pure $ between (lexeme OpenAngle) (lexeme CloseAngle) (many (sugarParse <* optional (try sugarParseComma)))
       _ -> pure Nothing
 
 sugarParseUnit :: Parser TokenStep
 sugarParseUnit = do
-  (sl,  _) <- lexeme Lexeme'OpenParen
-  (sl', _) <- lexeme Lexeme'CloseParen
+  (sl,  _) <- lexeme OpenParen
+  (sl', _) <- lexeme CloseParen
   if slColumn sl + 1 ==  slColumn sl' -- no space between parens
     then do
       note <- sugarParseNote
-      let tkn = Token'Unit note
+      let tkn = Unit note
       pure (sl, tkn)
     else
       empty
@@ -133,13 +134,13 @@ sugarParseTopLevel = sugarParseTopLevelMap
 
 sugarParseMap :: Parser TokenStep
 sugarParseMap = do
-  (sl, _) <- lexeme Lexeme'OpenCurl
+  (sl, _) <- lexeme OpenCurl
   -- elems <- many ((,) <$> sugarParse <*> (sugarParse <* optional (try sugarParseComma))) -- No colon
   elems <- many ((,) <$> (sugarParse <* sugarParseColon) <*> (sugarParse <* optional (try sugarParseComma))) -- Required colon
   -- elems <- many ((,) <$> (sugarParse <* optional (try sugarParseColon)) <*> (sugarParse <* optional (try sugarParseComma))) -- Optional colon
-  void $ lexeme Lexeme'CloseCurl
+  void $ lexeme CloseCurl
   note <- sugarParseNote
-  let tkn = Token'Map elems note
+  let tkn = Map elems note
   pure (sl, tkn)
 
 sugarParseTopLevelMap :: Parser TokenStep
@@ -147,7 +148,7 @@ sugarParseTopLevelMap = do
   -- elems <- many ((,) <$> sugarParse <*> (sugarParse <* optional (try sugarParseComma))) -- No colon
   elems <- many ((,) <$> (sugarParse <* sugarParseColon) <*> (sugarParse <* optional (try sugarParseComma))) -- Required colon
   -- elems <- many ((,) <$> (sugarParse <* optional (try sugarParseColon)) <*> (sugarParse <* optional (try sugarParseComma))) -- Optional colon
-  let tkn = Token'Map elems Nothing
+  let tkn = Map elems Nothing
   case elems of
     (((sl,_), _):_) -> return (sl, tkn)
     [] -> return (SourceLocation 0 0, tkn)
@@ -157,61 +158,61 @@ sugarParseList = try sugarParseSquareList <|> sugarParseParenList
 
 sugarParseSquareList :: Parser TokenStep
 sugarParseSquareList = do
-  (sl, _) <- lexeme Lexeme'OpenSquare
+  (sl, _) <- lexeme OpenSquare
   elems <- many (sugarParse <* optional (try sugarParseComma))
-  void $ lexeme Lexeme'CloseSquare
+  void $ lexeme CloseSquare
   note <- sugarParseNote
-  let tkn = Token'List elems Wrap'Square note
+  let tkn = List elems Square note
   pure (sl, tkn)
 
 sugarParseParenList :: Parser TokenStep
 sugarParseParenList = do
-  (sl, _) <- lexeme Lexeme'OpenParen
+  (sl, _) <- lexeme OpenParen
   elems <- many (sugarParse <* optional sugarParseComma)
-  void $ lexeme Lexeme'CloseParen
+  void $ lexeme CloseParen
   note <- sugarParseNote
-  let tkn = Token'List elems Wrap'Paren note
+  let tkn = List elems Paren note
   pure (sl, tkn)
 
 sugarParseQuote :: Parser TokenStep
 sugarParseQuote = do
-  (sl, _) <- lexeme Lexeme'QuoteStart
+  (sl, _) <- lexeme QuoteStart
   s <- lexemeQuoteString
-  void $ lexeme Lexeme'QuoteEnd
+  void $ lexeme QuoteEnd
   note <- sugarParseNote
-  let tkn = Token'Text s note
+  let tkn = Text s note
   pure (sl, tkn)
 
 sugarParseText :: Parser TokenStep
 sugarParseText = do
-  (sl, _) <- lexeme Lexeme'StringStart
+  (sl, _) <- lexeme StringStart
   s <- lexemeString
   note <- sugarParseNote
-  let tkn = Token'Text s note
+  let tkn = Text s note
   pure (sl, tkn)
 
 sugarParseComma :: Parser ()
 sugarParseComma = do
-  _ <- lexeme Lexeme'Comma
+  _ <- lexeme Comma
   pure ()
 
 sugarParseColon :: Parser ()
 sugarParseColon = do
-  _ <- lexeme Lexeme'Colon
+  _ <- lexeme Colon
   pure ()
 
 lexemeQuoteString :: Parser String
 lexemeQuoteString = Parser $ \ts -> case ts of
   [] -> (ts, Left (Nothing, "lexemeQuoteString end"))
   (x:xs) -> case snd x of
-    Lexeme'QuotedString s -> (xs, Right s)
+    QuotedString s -> (xs, Right s)
     _ -> (xs, Left (Just $ fst x, "lexemeQuoteString none"))
 
 lexemeString :: Parser String
 lexemeString = Parser $ \ts -> case ts of
   [] -> (ts, Left (Nothing, "lexemeString end"))
   (x:xs) -> case snd x of
-    Lexeme'String s -> (xs, Right s)
+    String s -> (xs, Right s)
     _ -> (xs, Left (Just $ fst x, "lexemeString none"))
 
 lexeme :: Lexeme -> Parser LexemeStep
