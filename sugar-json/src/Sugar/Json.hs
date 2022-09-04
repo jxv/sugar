@@ -47,12 +47,12 @@ class ToSugarCube a where
   toSugarCube :: a -> SugarCube
 
 sugarCubeMay :: Sugar -> Maybe SugarCube
-sugarCubeMay (Sugar'Unit _) = Just SugarCube'Unit
-sugarCubeMay (Sugar'Text t _) = Just $ SugarCube'Text t
-sugarCubeMay (Sugar'List xs _ _) = do
+sugarCubeMay (Unit _) = Just SugarCube'Unit
+sugarCubeMay (Text t _) = Just $ SugarCube'Text t
+sugarCubeMay (List xs _ _) = do
   xs' <- mapM sugarCubeMay xs
   return $ SugarCube'List xs'
-sugarCubeMay (Sugar'Map xs _) = do
+sugarCubeMay (Map xs _) = do
   xs' <- mapM (\(k,v) -> (,) <$> sugarTextMay k <*> sugarCubeMay v) xs
   return $ SugarCube'Map (Map.fromList xs')
 
@@ -75,15 +75,15 @@ writeJsonAsSugar src des = do
 
 
 instance ToSugar SugarCube where
-  toSugar SugarCube'Unit = Sugar'Unit Nothing
-  toSugar (SugarCube'Text t) = Sugar'Text t Nothing
-  toSugar (SugarCube'List xs) = Sugar'List (map (toSugarWithWrap Wrap'Paren) xs) Wrap'Square Nothing
+  toSugar SugarCube'Unit = Unit Nothing
+  toSugar (SugarCube'Text t) = Text t Nothing
+  toSugar (SugarCube'List xs) = List (map (toSugarWithWrap Paren) xs) Square Nothing
     where
       -- Alternate nesting between Wrap types
       toSugarWithWrap w c = case c of
-        SugarCube'List ys -> Sugar'List (map (toSugarWithWrap (case w of Wrap'Square -> Wrap'Paren; Wrap'Paren -> Wrap'Square)) ys) w Nothing
+        SugarCube'List ys -> List (map (toSugarWithWrap (case w of Square -> Paren; Paren -> Square)) ys) w Nothing
         _ -> toSugar c
-  toSugar (SugarCube'Map m) = Sugar'Map (map (\(k,v) -> (toSugar k, toSugar v)) $ Map.toList m) Nothing
+  toSugar (SugarCube'Map m) = Map (map (\(k,v) -> (toSugar k, toSugar v)) $ Map.toList m) Nothing
 
 instance ToSugarCube Json.Value where
   toSugarCube Json.Null = SugarCube'Unit

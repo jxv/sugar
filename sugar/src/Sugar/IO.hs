@@ -24,8 +24,8 @@ import Data.Char (isSeparator)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 
+import Sugar.Parser (flatten, runParser, sugarParseList, sugarParseTopLevel)
 import Sugar.Types
-import Sugar.Parser
 import Sugar.Lexer
 
 --
@@ -62,9 +62,9 @@ ppNewLine :: PrettyPrintConfig -> PrettyPrintState -> Text
 ppNewLine ppc pps = "\n" <> prettyPrintNesting ppc pps
 
 prettyPrintStep :: PrettyPrintConfig -> PrettyPrintState -> Sugar -> Text
-prettyPrintStep _ _ (Sugar'Unit note) = "()" <> minifyPrintNote note
-prettyPrintStep _ _ (Sugar'Text txt note) = sanitizeText txt <> minifyPrintNote note
-prettyPrintStep ppc pps (Sugar'List xs w note) =
+prettyPrintStep _ _ (Unit note) = "()" <> minifyPrintNote note
+prettyPrintStep _ _ (Text txt note) = sanitizeText txt <> minifyPrintNote note
+prettyPrintStep ppc pps (List xs w note) =
     open
     <> T.concat (map (\x -> T.concat [ppNewLine ppc pps, prettyPrintStep ppc (ppsIncrNesting pps) x]) xs)
     <> ppNewLine ppc (ppsDecrNesting pps)
@@ -72,27 +72,27 @@ prettyPrintStep ppc pps (Sugar'List xs w note) =
     <> minifyPrintNote note
   where
     open, close :: Text
-    (open,close) = case w of Wrap'Square -> ("[","]"); Wrap'Paren -> ("(",")")
-prettyPrintStep ppc pps (Sugar'Map m note) = if ppsNesting pps == 0 && isNothing note then topLevel else nested
+    (open,close) = case w of Square -> ("[","]"); Paren -> ("(",")")
+prettyPrintStep ppc pps (Map m note) = if ppsNesting pps == 0 && isNothing note then topLevel else nested
     where
       topLevel =
-        T.concat (map (\(k,v) -> T.concat [prettyPrintStep ppc nextPps k, " ", prettyPrintStep ppc nextPps v, "\n"]) m)
+        T.concat (map (\(k,v) -> T.concat [prettyPrintStep ppc nextPps k, ": ", prettyPrintStep ppc nextPps v, "\n"]) m)
       nested =
         "{"
-        <> T.concat (map (\(k,v) -> T.concat [ppNewLine ppc pps, prettyPrintStep ppc nextPps k, " ", prettyPrintStep ppc nextPps v]) m)
+        <> T.concat (map (\(k,v) -> T.concat [ppNewLine ppc pps, prettyPrintStep ppc nextPps k, ": ", prettyPrintStep ppc nextPps v]) m)
         <> ppNewLine ppc (ppsDecrNesting pps)
         <> "}"
         <> minifyPrintNote note
       nextPps = ppsIncrNesting pps
 
 minifyPrint :: Sugar -> Text
-minifyPrint (Sugar'Unit note) = "()" <> minifyPrintNote note
-minifyPrint (Sugar'Text txt note) = sanitizeText txt <> minifyPrintNote note
-minifyPrint (Sugar'List xs w note) = open <> T.intercalate " " (map minifyPrint xs) <> close <> minifyPrintNote note
+minifyPrint (Unit note) = "()" <> minifyPrintNote note
+minifyPrint (Text txt note) = sanitizeText txt <> minifyPrintNote note
+minifyPrint (List xs w note) = open <> T.intercalate ":" (map minifyPrint xs) <> close <> minifyPrintNote note
   where
     open, close :: Text
-    (open,close) = case w of Wrap'Square -> ("[","]"); Wrap'Paren -> ("(",")")
-minifyPrint (Sugar'Map m note) = "{" <> T.intercalate " " (map minifyPrint xs) <> "}" <> minifyPrintNote note
+    (open,close) = case w of Square -> ("[","]"); Paren -> ("(",")")
+minifyPrint (Map m note) = "{" <> T.intercalate "," (map minifyPrint xs) <> "}" <> minifyPrintNote note
   where
     xs :: [Sugar]
     xs = (\(k,v) -> [k,v]) =<< m

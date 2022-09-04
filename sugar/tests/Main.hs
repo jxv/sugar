@@ -7,6 +7,7 @@ import Test.Hspec
 import Data.FileEmbed (embedFile)
 
 import Sugar
+import Sugar.Lexer
 
 main :: IO ()
 main = do
@@ -17,153 +18,153 @@ spec :: Spec
 spec = parallel $ do
   it "unit" $ do
     let actual = map snd $ psSteps $ sugarLexerState "()"
-    let expected = [Lexeme'OpenParen, Lexeme'CloseParen]
+    let expected = [OpenParen, CloseParen]
     actual `shouldBe` expected
   it "string" $ do
     let actual = map snd $ psSteps $ sugarLexerState "hello"
-    let expected = [Lexeme'StringStart, Lexeme'String "hello"]
+    let expected = [StringStart, String "hello"]
     actual `shouldBe` expected
   it "empty map" $ do
     let actual = map snd $ psSteps $ sugarLexerState "{}"
-    let expected = [Lexeme'OpenCurl, Lexeme'CloseCurl]
+    let expected = [OpenCurl, CloseCurl]
     actual `shouldBe` expected
   it "list" $ do
     let actual = map snd $ psSteps $ sugarLexerState "[]"
-    let expected = [Lexeme'OpenSquare, Lexeme'CloseSquare]
+    let expected = [OpenSquare, CloseSquare]
     actual `shouldBe` expected
   it "angle" $ do
     let actual = map snd $ psSteps $ sugarLexerState "<>"
-    let expected = [Lexeme'OpenAngle, Lexeme'CloseAngle]
+    let expected = [OpenAngle, CloseAngle]
     actual `shouldBe` expected
   it "Example 01 Top Level Map" $ do
     let actual = parseSugarFromText $ decodeUtf8 $(embedFile "../examples/01_top-level-map.sg")
-    let expected = Just $ Sugar'Map
-          [(Sugar'Text "Lorem" Nothing,Sugar'Text "ipsum" Nothing)
-          ,(Sugar'Text "dolor" Nothing,Sugar'Text "site amet" Nothing)
-          ,(Sugar'Text "consectetur adipiscing" Nothing,Sugar'Text "elit" Nothing)
-          ,(Sugar'Text "sed do" Nothing,Sugar'Text "eiusmod tempor" Nothing)
+    let expected = Just $ Map
+          [(Text "Lorem" Nothing,Text "ipsum" Nothing)
+          ,(Text "dolor" Nothing,Text "site amet" Nothing)
+          ,(Text "consectetur adipiscing" Nothing,Text "elit" Nothing)
+          ,(Text "sed do" Nothing,Text "eiusmod tempor" Nothing)
           ]
           Nothing
     actual `shouldBe` expected
   it "Example 02 Nested Map" $ do
     let actual = parseSugarFromText $ decodeUtf8 $(embedFile "../examples/02_nested-map.sg")
-    let expected = Just $ Sugar'Map
-          [(Sugar'Text "Lorem" Nothing,Sugar'Map
-            [(Sugar'Text "ipsum" Nothing,Sugar'Text "dolor" Nothing)
-            ,(Sugar'Text "site" Nothing,Sugar'Text "amet consectetur" Nothing)
-            ,(Sugar'Text "adipiscing elit" Nothing,Sugar'Text "sed" Nothing)
-            ,(Sugar'Text "do eiusmod" Nothing,Sugar'Text "tempor incididunt" Nothing)
+    let expected = Just $ Map
+          [(Text "Lorem" Nothing,Map
+            [(Text "ipsum" Nothing,Text "dolor" Nothing)
+            ,(Text "site" Nothing,Text "amet consectetur" Nothing)
+            ,(Text "adipiscing elit" Nothing,Text "sed" Nothing)
+            ,(Text "do eiusmod" Nothing,Text "tempor incididunt" Nothing)
             ] Nothing)
-          ,(Sugar'Text "ut labore" Nothing,Sugar'Map
-            [(Sugar'Text "et" Nothing,Sugar'Text "dolore" Nothing)
-            ,(Sugar'Text "manga" Nothing,Sugar'Text "aliqua ut" Nothing)
-            ,(Sugar'Text "enium ad" Nothing,Sugar'Text "minim" Nothing)
-            ,(Sugar'Text "veniam quis" Nothing,Sugar'Text "nostrud exercitation" Nothing)
+          ,(Text "ut labore" Nothing,Map
+            [(Text "et" Nothing,Text "dolore" Nothing)
+            ,(Text "manga" Nothing,Text "aliqua ut" Nothing)
+            ,(Text "enium ad" Nothing,Text "minim" Nothing)
+            ,(Text "veniam quis" Nothing,Text "nostrud exercitation" Nothing)
             ] Nothing)
           ]
           Nothing
     actual `shouldBe` expected
   it "Example 03 Top Level List" $ do
     let actual = parseSugarListFromText $ decodeUtf8 $(embedFile "../examples/03_top-level-list.sg")
-    let expected = Just $ Sugar'List
-          [Sugar'Text "Lorem" Nothing
-          ,Sugar'Text "ipsum" Nothing
-          ,Sugar'Text "dolor site" Nothing
-          ,Sugar'Map
-            [(Sugar'Text "amet" Nothing,Sugar'Text "consectetur" Nothing)]
+    let expected = Just $ List
+          [Text "Lorem" Nothing
+          ,Text "ipsum" Nothing
+          ,Text "dolor site" Nothing
+          ,Map
+            [(Text "amet" Nothing,Text "consectetur" Nothing)]
             Nothing
           ]
-          Wrap'Square
+          Square
           Nothing
     actual `shouldBe` expected
   it "Example 04 Nest List" $ do
     let actual = parseSugarListFromText $ decodeUtf8 $(embedFile "../examples/04_nest-list.sg")
-    let expected = Just $ Sugar'List
-          [Sugar'List
-            [Sugar'Text "Lorem" Nothing,Sugar'Text "ipsum" Nothing]
-            Wrap'Square
+    let expected = Just $ List
+          [List
+            [Text "Lorem" Nothing,Text "ipsum" Nothing]
+            Square
             Nothing
-          ,Sugar'List
-            [Sugar'Text "ipsum" Nothing
-            ,Sugar'List
-              [Sugar'Text "dolor site" Nothing
-              ,Sugar'Map
-                [(Sugar'Text "amet" Nothing,Sugar'Text "consectetur" Nothing)] Nothing
+          ,List
+            [Text "ipsum" Nothing
+            ,List
+              [Text "dolor site" Nothing
+              ,Map
+                [(Text "amet" Nothing,Text "consectetur" Nothing)] Nothing
               ]
-              Wrap'Square
+              Square
               Nothing
             ]
-            Wrap'Square
+            Square
             Nothing
           ]
-          Wrap'Square
+          Square
           Nothing
     actual `shouldBe` expected
   it "Example 05 Note" $ do
     let actual = parseSugarFromText $ decodeUtf8 $(embedFile "../examples/05_note.sg")
-    let expected = Just $ Sugar'Map
-          [(Sugar'Text "Lorem" Nothing,Sugar'Text "ipsum" (Just [Sugar'Text "dolor" Nothing]))
-          ,(Sugar'Text "site" Nothing,Sugar'Text "amet" (Just [Sugar'Text "consectetur adipiscing" Nothing]))
-          ,(Sugar'Map
-            [(Sugar'Text "elit" Nothing,Sugar'Map
-              [(Sugar'Text "sed" Nothing,Sugar'Text "do" Nothing)]
-              (Just [Sugar'Text "eiusmod" Nothing]))
+    let expected = Just $ Map
+          [(Text "Lorem" Nothing,Text "ipsum" (Just [Text "dolor" Nothing]))
+          ,(Text "site" Nothing,Text "amet" (Just [Text "consectetur adipiscing" Nothing]))
+          ,(Map
+            [(Text "elit" Nothing,Map
+              [(Text "sed" Nothing,Text "do" Nothing)]
+              (Just [Text "eiusmod" Nothing]))
             ]
-            (Just [Sugar'Text "tempor" Nothing])
-          ,Sugar'List
-            [Sugar'Text "incididunt" Nothing
-            ,Sugar'Text "ut" (Just [Sugar'Text "labore" Nothing])
-            ,Sugar'Text "et" (Just [Sugar'Text "dolore" Nothing,Sugar'Text "magna" Nothing])
+            (Just [Text "tempor" Nothing])
+          ,List
+            [Text "incididunt" Nothing
+            ,Text "ut" (Just [Text "labore" Nothing])
+            ,Text "et" (Just [Text "dolore" Nothing,Text "magna" Nothing])
             ]
-            Wrap'Square
-            (Just [Sugar'List [] Wrap'Square Nothing]))
-          ,(Sugar'Unit Nothing
-           ,Sugar'List
-            [Sugar'Text "incididunt" Nothing
-            ,Sugar'Text "ut" (Just [Sugar'Text "labore" Nothing])
-            ,Sugar'Text "et" (Just [Sugar'Text "dolore" Nothing,Sugar'Text "magna" Nothing])
+            Square
+            (Just [List [] Square Nothing]))
+          ,(Unit Nothing
+           ,List
+            [Text "incididunt" Nothing
+            ,Text "ut" (Just [Text "labore" Nothing])
+            ,Text "et" (Just [Text "dolore" Nothing,Text "magna" Nothing])
             ]
-            Wrap'Square
-            (Just [Sugar'Text "a" Nothing,Sugar'Text "b" Nothing,Sugar'Text "c" Nothing]))
-          ,(Sugar'Unit Nothing
-           ,Sugar'List
-            [Sugar'Text "incididunt" Nothing
-            ,Sugar'Text "ut" (Just [Sugar'Text "labore" Nothing])
-            ,Sugar'Text "et" (Just [Sugar'Text "dolore" Nothing,Sugar'Text "magna" Nothing])
+            Square
+            (Just [Text "a" Nothing,Text "b" Nothing,Text "c" Nothing]))
+          ,(Unit Nothing
+           ,List
+            [Text "incididunt" Nothing
+            ,Text "ut" (Just [Text "labore" Nothing])
+            ,Text "et" (Just [Text "dolore" Nothing,Text "magna" Nothing])
             ]
-            Wrap'Square
-            (Just [Sugar'Text "a" Nothing,Sugar'Text "b" Nothing,Sugar'Text "c" Nothing]))
-          ,(Sugar'Unit Nothing
-           ,Sugar'List
-            [Sugar'Text "incididunt" Nothing
-            ,Sugar'Text "ut" (Just [Sugar'Text "labore" Nothing])
-            ,Sugar'Text "et" (Just [Sugar'Text "dolore" Nothing,Sugar'Text "magna" Nothing])
+            Square
+            (Just [Text "a" Nothing,Text "b" Nothing,Text "c" Nothing]))
+          ,(Unit Nothing
+           ,List
+            [Text "incididunt" Nothing
+            ,Text "ut" (Just [Text "labore" Nothing])
+            ,Text "et" (Just [Text "dolore" Nothing,Text "magna" Nothing])
             ]
-            Wrap'Square
-            (Just [Sugar'Text "a" Nothing,Sugar'Text "b" Nothing,Sugar'Text "c" Nothing]))
+            Square
+            (Just [Text "a" Nothing,Text "b" Nothing,Text "c" Nothing]))
           ]
           Nothing
     actual `shouldBe` expected
   it "Example 06 Top Level Non-Text Map" $ do
     let actual = parseSugarFromText $ decodeUtf8 $(embedFile "../examples/06_top-level-non-text-map.sg")
-    let expected = Just $ Sugar'Map
+    let expected = Just $ Map
           [
-            (Sugar'Map
-              [(Sugar'Text "first-name" Nothing,Sugar'Text "last-name" Nothing)]
+            (Map
+              [(Text "first-name" Nothing,Text "last-name" Nothing)]
               Nothing
-            ,Sugar'Text "person" Nothing)
-          , (Sugar'List
-              [Sugar'Text "a" Nothing,Sugar'Text "b" Nothing,Sugar'Text "c" Nothing,Sugar'Text "d" Nothing,Sugar'Text "id" Nothing]
-              Wrap'Square
+            ,Text "person" Nothing)
+          , (List
+              [Text "a" Nothing,Text "b" Nothing,Text "c" Nothing,Text "d" Nothing,Text "id" Nothing]
+              Square
               Nothing
-            ,Sugar'Text "value" Nothing)
-          ,(Sugar'Map
-            [(Sugar'Text "nested" Nothing,
-              Sugar'Map [(Sugar'Text "ident" Nothing,Sugar'Text "ifier" Nothing)] Nothing)] Nothing
-            ,Sugar'Map
-              [ (Sugar'Text "with" Nothing
-                ,Sugar'Map
-                  [(Sugar'Text "nested" Nothing,Sugar'Text "value-pair" Nothing)]
+            ,Text "value" Nothing)
+          ,(Map
+            [(Text "nested" Nothing,
+              Map [(Text "ident" Nothing,Text "ifier" Nothing)] Nothing)] Nothing
+            ,Map
+              [ (Text "with" Nothing
+                ,Map
+                  [(Text "nested" Nothing,Text "value-pair" Nothing)]
                   Nothing)
               ]
             Nothing)
@@ -172,11 +173,11 @@ spec = parallel $ do
     actual `shouldBe` expected
   it "Example 07 Comments" $ do
     let actual = parseSugarFromText $ decodeUtf8 $(embedFile "../examples/07_comments.sg")
-    let expected = Just $ Sugar'Map
-          [(Sugar'Text "a" Nothing,Sugar'Text "b" Nothing)
-          ,(Sugar'Text "c" Nothing,Sugar'Text "d" Nothing)
-          ,(Sugar'Text "e" Nothing,Sugar'Text "f" Nothing)
-          ,(Sugar'Text "g" Nothing,Sugar'Text "h" Nothing)
+    let expected = Just $ Map
+          [(Text "a" Nothing,Text "b" Nothing)
+          ,(Text "c" Nothing,Text "d" Nothing)
+          ,(Text "e" Nothing,Text "f" Nothing)
+          ,(Text "g" Nothing,Text "h" Nothing)
           ]
           Nothing
     actual `shouldBe` expected

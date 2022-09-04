@@ -10,7 +10,7 @@ module Sugar.Lexer
 import Data.Char
 import Safe.Exact (splitAtExactMay)
 
-import Sugar.Types
+import Sugar.Types (reservedChars)
 
 data LexerState = LexerState
   { psSteps :: [LexemeStep]
@@ -25,24 +25,25 @@ data SourceLocation = SourceLocation
   } deriving (Show, Eq)
 
 data Lexeme
-  = Lexeme'Start
-  | Lexeme'OpenCurl
-  | Lexeme'CloseCurl
-  | Lexeme'OpenParen
-  | Lexeme'CloseParen
-  | Lexeme'OpenSquare
-  | Lexeme'CloseSquare
-  | Lexeme'OpenAngle
-  | Lexeme'CloseAngle
-  | Lexeme'Comma
-  | Lexeme'StringStart
-  | Lexeme'String String
-  | Lexeme'QuoteStart
-  | Lexeme'QuotedString String
-  | Lexeme'QuoteEnd
-  | Lexeme'SingleLineComment
-  | Lexeme'MultiLineCommentStart
-  | Lexeme'MultiLineCommentEnd
+  = Start
+  | OpenCurl
+  | CloseCurl
+  | OpenParen
+  | CloseParen
+  | OpenSquare
+  | CloseSquare
+  | OpenAngle
+  | CloseAngle
+  | Comma
+  | Colon
+  | StringStart
+  | String String
+  | QuoteStart
+  | QuotedString String
+  | QuoteEnd
+  | SingleLineComment
+  | MultiLineCommentStart
+  | MultiLineCommentEnd
   deriving (Show, Eq)
 
 sugarLexerState :: String -> LexerState
@@ -90,17 +91,17 @@ lastLexeme ps = case psSteps ps of
 
 stepReadSugarString :: String -> LexerState -> (String, LexerState)
 stepReadSugarString s ps = case lastLexeme ps of
-  Nothing -> stepReadSugarString' s ps Lexeme'Start -- Benign hack to start parsing
+  Nothing -> stepReadSugarString' s ps Start -- Benign hack to start parsing
   Just t -> stepReadSugarString' s ps t
 
 stepReadSugarString' :: String -> LexerState -> Lexeme -> (String, LexerState)
 stepReadSugarString' [] ps _ = ([], ps)
 stepReadSugarString' s ps t = case t of
-  Lexeme'StringStart -> stepReadString s ps
-  Lexeme'QuoteStart -> stepQuotedStart s ps
-  Lexeme'QuotedString _ -> stepQuoteString s ps
-  Lexeme'SingleLineComment -> stepSingleLineComment s ps
-  Lexeme'MultiLineCommentStart -> stepMultiLineComment s ps
+  StringStart -> stepReadString s ps
+  QuoteStart -> stepQuotedStart s ps
+  QuotedString _ -> stepQuoteString s ps
+  SingleLineComment -> stepSingleLineComment s ps
+  MultiLineCommentStart -> stepMultiLineComment s ps
   _ -> normalStepReadSugarString s ps
 
 normalStepReadSugarString :: String -> LexerState -> (String, LexerState)
@@ -109,21 +110,22 @@ normalStepReadSugarString s@(c:cs) ps
   | c == '\n' = (cs, nextLineState ps)
   | isSpace c = (cs, incrColState ps)
   | otherwise = case c of
-    '{' -> (cs, step Lexeme'OpenCurl)
-    '}' -> (cs, step Lexeme'CloseCurl)
-    '(' -> (cs, step Lexeme'OpenParen)
-    ')' -> (cs, step Lexeme'CloseParen)
-    '[' -> (cs, step Lexeme'OpenSquare)
-    ']' -> (cs, step Lexeme'CloseSquare)
-    '<' -> (cs, step Lexeme'OpenAngle)
-    '>' -> (cs, step Lexeme'CloseAngle)
-    ',' -> (cs, step Lexeme'Comma)
-    '"' -> (cs, step Lexeme'QuoteStart)
-    ';' -> (cs, step Lexeme'SingleLineComment)
+    '{' -> (cs, step OpenCurl)
+    '}' -> (cs, step CloseCurl)
+    '(' -> (cs, step OpenParen)
+    ')' -> (cs, step CloseParen)
+    '[' -> (cs, step OpenSquare)
+    ']' -> (cs, step CloseSquare)
+    '<' -> (cs, step OpenAngle)
+    '>' -> (cs, step CloseAngle)
+    ',' -> (cs, step Comma)
+    ':' -> (cs, step Colon)
+    '"' -> (cs, step QuoteStart)
+    ';' -> (cs, step SingleLineComment)
     _ -> case splitAtExactMay 2 s of
       Just ("#|", s') ->
-        (s', stepColState 2 $ ps{psSteps = (psLocation ps, Lexeme'MultiLineCommentStart) : psSteps ps})
-      _ -> (s, ps { psSteps = (psLocation ps, Lexeme'StringStart) : psSteps ps })
+        (s', stepColState 2 $ ps{psSteps = (psLocation ps, MultiLineCommentStart) : psSteps ps})
+      _ -> (s, ps { psSteps = (psLocation ps, StringStart) : psSteps ps })
     where
       step t = (incrColState ps) { psSteps = (psLocation ps, t) : psSteps ps }
 
@@ -134,7 +136,7 @@ stepReadString :: String -> LexerState -> (String, LexerState)
 stepReadString s ps = (s', ps')
   where
     ps' = stepColState (length str) $ prependStep step ps
-    step = (psLocation ps, Lexeme'String str)
+    step = (psLocation ps, String str)
     (str, s') = span2
       (\c c' -> not $ isSpace c || isReservedChar c || (c == '#' && c' == Just '|'))
       s
@@ -153,14 +155,14 @@ stepSingleLineComment :: String -> LexerState -> (String, LexerState)
 stepSingleLineComment s ps = (s', ps')
   where
     ps' = stepColState (length str) $ prependStep step ps
-    step = (psLocation ps, Lexeme'String str)
+    step = (psLocation ps, String str)
     (str, s') = span (/= '\n') s
 
 stepMultiLineComment :: String -> LexerState -> (String, LexerState)
 stepMultiLineComment s ps =  case span2ExactSkip (\c c' -> c == '|' && c' == '#') s of
   Nothing -> ("", stepLocState s ps) -- failed to consume end of comment marker
   Just (str, s') -> let
-    step = (psLocation ps, Lexeme'MultiLineCommentEnd)
+    step = (psLocation ps, MultiLineCommentEnd)
     ps' = stepLocState (str ++ "|#") $ prependStep step ps
     in (s', ps')
 
@@ -175,7 +177,7 @@ stepQuotedStart :: String -> LexerState -> (String, LexerState)
 stepQuotedStart s ps = (s', ps')
   where
     ps' = stepColState (length str) $ prependStep step ps
-    step = (loc, Lexeme'QuotedString str)
+    step = (loc, QuotedString str)
     (loc, str, s') = spanWithEscape (psLocation ps) s
 
 spanWithEscape :: SourceLocation -> String -> (SourceLocation, String, String)
@@ -189,5 +191,5 @@ spanWithEscape loc xs@(x:y:z) = case x of
   _ -> let (loc', ys,zs) = spanWithEscape loc (y:z) in (incrColLoc loc', x:ys, zs)
 
 stepQuoteString :: String -> LexerState -> (String, LexerState)
-stepQuoteString ('"':xs) ps = (xs, incrColState $ prependStep (psLocation ps, Lexeme'QuoteEnd) ps)
+stepQuoteString ('"':xs) ps = (xs, incrColState $ prependStep (psLocation ps, QuoteEnd) ps)
 stepQuoteString xs ps = normalStepReadSugarString xs ps -- Something went wrong, but keep parsing.
