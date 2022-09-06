@@ -145,7 +145,9 @@ tokenToAdt fns (loc, Text name params) (_, List conss _ Nothing) = Adt (T.pack n
 tokenToAdt _ _ (loc, _) = Left [Error loc Err'TypeMismatch]
 
 tokenToCons :: ParamFns a m c e -> TokenStep -> Either [Error e] (Cons m c)
-tokenToCons fns (loc, Text name params) =  Cons (T.pack name) <$> tokenParams (paramFnCons fns) params <*> pure ConsValue'None <*> pure loc
+tokenToCons _ (loc, Text ('&':name) params) = Cons (T.pack name) <$> pure Nothing <*> ((ConsValue'TypeRef . pure) <$> (tokenTypeRef cons)) <*> pure loc
+  where cons = (loc, Text name params)
+tokenToCons fns (loc, Text name params) = Cons (T.pack name) <$> tokenParams (paramFnCons fns) params <*> pure ConsValue'None <*> pure loc
 tokenToCons fns (loc, List [(_, Text name Nothing)] _ params) = Cons (T.pack name) <$> tokenParams (paramFnCons fns) params <*> pure ConsValue'None <*> pure loc
 tokenToCons fns (loc, List [(_, Text name Nothing), (_, Map mems Nothing)] _ params) = do
   ms <- tokenToMems' fns mems

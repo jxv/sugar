@@ -96,6 +96,12 @@ spec = parallel $ do
             ]
             Square
             Nothing
+          ,List 
+            [Text "x" Nothing
+            ,Text "y" Nothing
+            ]
+            Paren
+            Nothing
           ]
           Square
           Nothing

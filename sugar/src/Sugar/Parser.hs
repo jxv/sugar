@@ -168,7 +168,7 @@ sugarParseSquareList = do
 sugarParseParenList :: Parser TokenStep
 sugarParseParenList = do
   (sl, _) <- lexeme OpenParen
-  elems <- many (sugarParse <* optional sugarParseComma)
+  elems <- many (sugarParse <* optional (try sugarParseComma))
   void $ lexeme CloseParen
   note <- sugarParseNote
   let tkn = List elems Paren note
