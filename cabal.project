@@ -3,10 +3,12 @@ packages:
   sugar-json
   sugar-scheme
   sugar-data
+  sugar-cache
   json2sg
 
 package sugar
 package sugar-json
 package sugar-scheme
 package sugar-data
+package sugar-cache
 package json2sg
