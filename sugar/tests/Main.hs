@@ -39,27 +39,27 @@ spec = parallel $ do
   it "Example 01 Top Level Map" $ do
     let actual = parseSugarFromText $ decodeUtf8 $(embedFile "../examples/01_top-level-map.sg")
     let expected = Just $ Map
-          [(Text "Lorem" Nothing,Text "ipsum" Nothing)
-          ,(Text "dolor" Nothing,Text "site amet" Nothing)
-          ,(Text "consectetur adipiscing" Nothing,Text "elit" Nothing)
-          ,(Text "sed do" Nothing,Text "eiusmod tempor" Nothing)
+          [(Text "Lorem" NoQuote Nothing,Text "ipsum" NoQuote Nothing)
+          ,(Text "dolor" NoQuote Nothing,Text "site amet" HasQuote Nothing)
+          ,(Text "consectetur adipiscing" HasQuote Nothing,Text "elit" NoQuote Nothing)
+          ,(Text "sed do" HasQuote Nothing,Text "eiusmod tempor" HasQuote Nothing)
           ]
           Nothing
     actual `shouldBe` expected
   it "Example 02 Nested Map" $ do
     let actual = parseSugarFromText $ decodeUtf8 $(embedFile "../examples/02_nested-map.sg")
     let expected = Just $ Map
-          [(Text "Lorem" Nothing,Map
-            [(Text "ipsum" Nothing,Text "dolor" Nothing)
-            ,(Text "site" Nothing,Text "amet consectetur" Nothing)
-            ,(Text "adipiscing elit" Nothing,Text "sed" Nothing)
-            ,(Text "do eiusmod" Nothing,Text "tempor incididunt" Nothing)
+          [(Text "Lorem" NoQuote Nothing,Map
+            [(Text "ipsum" NoQuote Nothing,Text "dolor" NoQuote Nothing)
+            ,(Text "site" NoQuote Nothing,Text "amet consectetur" HasQuote Nothing)
+            ,(Text "adipiscing elit" HasQuote Nothing,Text "sed" NoQuote Nothing)
+            ,(Text "do eiusmod" HasQuote Nothing,Text "tempor incididunt" HasQuote Nothing)
             ] Nothing)
-          ,(Text "ut labore" Nothing,Map
-            [(Text "et" Nothing,Text "dolore" Nothing)
-            ,(Text "manga" Nothing,Text "aliqua ut" Nothing)
-            ,(Text "enium ad" Nothing,Text "minim" Nothing)
-            ,(Text "veniam quis" Nothing,Text "nostrud exercitation" Nothing)
+          ,(Text "ut labore" HasQuote Nothing,Map
+            [(Text "et" NoQuote Nothing,Text "dolore" NoQuote Nothing)
+            ,(Text "manga" NoQuote Nothing,Text "aliqua ut" HasQuote Nothing)
+            ,(Text "enium ad" HasQuote Nothing,Text "minim" NoQuote Nothing)
+            ,(Text "veniam quis" HasQuote Nothing,Text "nostrud exercitation" HasQuote Nothing)
             ] Nothing)
           ]
           Nothing
@@ -67,11 +67,11 @@ spec = parallel $ do
   it "Example 03 Top Level List" $ do
     let actual = parseSugarListFromText $ decodeUtf8 $(embedFile "../examples/03_top-level-list.sg")
     let expected = Just $ List
-          [Text "Lorem" Nothing
-          ,Text "ipsum" Nothing
-          ,Text "dolor site" Nothing
+          [Text "Lorem" NoQuote Nothing
+          ,Text "ipsum" HasQuote Nothing
+          ,Text "dolor site" HasQuote Nothing
           ,Map
-            [(Text "amet" Nothing,Text "consectetur" Nothing)]
+            [(Text "amet" NoQuote Nothing,Text "consectetur" NoQuote Nothing)]
             Nothing
           ]
           Square
@@ -81,15 +81,15 @@ spec = parallel $ do
     let actual = parseSugarListFromText $ decodeUtf8 $(embedFile "../examples/04_nest-list.sg")
     let expected = Just $ List
           [List
-            [Text "Lorem" Nothing,Text "ipsum" Nothing]
+            [Text "Lorem" NoQuote Nothing,Text "ipsum" NoQuote Nothing]
             Square
             Nothing
           ,List
-            [Text "ipsum" Nothing
+            [Text "ipsum" HasQuote Nothing
             ,List
-              [Text "dolor site" Nothing
+              [Text "dolor site" HasQuote Nothing
               ,Map
-                [(Text "amet" Nothing,Text "consectetur" Nothing)] Nothing
+                [(Text "amet" NoQuote Nothing,Text "consectetur" NoQuote Nothing)] Nothing
               ]
               Square
               Nothing
@@ -97,8 +97,8 @@ spec = parallel $ do
             Square
             Nothing
           ,List 
-            [Text "x" Nothing
-            ,Text "y" Nothing
+            [Text "x" NoQuote Nothing
+            ,Text "y" NoQuote Nothing
             ]
             Paren
             Nothing
@@ -109,45 +109,45 @@ spec = parallel $ do
   it "Example 05 Note" $ do
     let actual = parseSugarFromText $ decodeUtf8 $(embedFile "../examples/05_note.sg")
     let expected = Just $ Map
-          [(Text "Lorem" Nothing,Text "ipsum" (Just [Text "dolor" Nothing]))
-          ,(Text "site" Nothing,Text "amet" (Just [Text "consectetur adipiscing" Nothing]))
+          [(Text "Lorem" NoQuote Nothing,Text "ipsum" NoQuote (Just [Text "dolor" NoQuote Nothing]))
+          ,(Text "site" NoQuote Nothing,Text "amet" NoQuote (Just [Text "consectetur adipiscing" HasQuote Nothing]))
           ,(Map
-            [(Text "elit" Nothing,Map
-              [(Text "sed" Nothing,Text "do" Nothing)]
-              (Just [Text "eiusmod" Nothing]))
+            [(Text "elit" NoQuote Nothing,Map
+              [(Text "sed" NoQuote Nothing,Text "do" NoQuote Nothing)]
+              (Just [Text "eiusmod" NoQuote Nothing]))
             ]
-            (Just [Text "tempor" Nothing])
+            (Just [Text "tempor" NoQuote Nothing])
           ,List
-            [Text "incididunt" Nothing
-            ,Text "ut" (Just [Text "labore" Nothing])
-            ,Text "et" (Just [Text "dolore" Nothing,Text "magna" Nothing])
+            [Text "incididunt" NoQuote Nothing
+            ,Text "ut" NoQuote (Just [Text "labore" NoQuote Nothing])
+            ,Text "et" NoQuote (Just [Text "dolore" NoQuote Nothing,Text "magna" NoQuote Nothing])
             ]
             Square
             (Just [List [] Square Nothing]))
           ,(Unit Nothing
            ,List
-            [Text "incididunt" Nothing
-            ,Text "ut" (Just [Text "labore" Nothing])
-            ,Text "et" (Just [Text "dolore" Nothing,Text "magna" Nothing])
+            [Text "incididunt" NoQuote Nothing
+            ,Text "ut" NoQuote (Just [Text "labore" NoQuote Nothing])
+            ,Text "et" NoQuote (Just [Text "dolore" NoQuote Nothing,Text "magna" NoQuote Nothing])
             ]
             Square
-            (Just [Text "a" Nothing,Text "b" Nothing,Text "c" Nothing]))
+            (Just [Text "a" NoQuote Nothing,Text "b" NoQuote Nothing,Text "c" NoQuote Nothing]))
           ,(Unit Nothing
            ,List
-            [Text "incididunt" Nothing
-            ,Text "ut" (Just [Text "labore" Nothing])
-            ,Text "et" (Just [Text "dolore" Nothing,Text "magna" Nothing])
+            [Text "incididunt" NoQuote Nothing
+            ,Text "ut" NoQuote (Just [Text "labore" NoQuote Nothing])
+            ,Text "et" NoQuote (Just [Text "dolore" NoQuote Nothing,Text "magna" NoQuote Nothing])
             ]
             Square
-            (Just [Text "a" Nothing,Text "b" Nothing,Text "c" Nothing]))
+            (Just [Text "a" NoQuote Nothing,Text "b" NoQuote Nothing,Text "c" NoQuote Nothing]))
           ,(Unit Nothing
            ,List
-            [Text "incididunt" Nothing
-            ,Text "ut" (Just [Text "labore" Nothing])
-            ,Text "et" (Just [Text "dolore" Nothing,Text "magna" Nothing])
+            [Text "incididunt" NoQuote Nothing
+            ,Text "ut" NoQuote (Just [Text "labore" NoQuote Nothing])
+            ,Text "et" NoQuote (Just [Text "dolore" NoQuote Nothing,Text "magna" NoQuote Nothing])
             ]
             Square
-            (Just [Text "a" Nothing,Text "b" Nothing,Text "c" Nothing]))
+            (Just [Text "a" NoQuote Nothing,Text "b" NoQuote Nothing,Text "c" NoQuote Nothing]))
           ]
           Nothing
     actual `shouldBe` expected
@@ -156,21 +156,21 @@ spec = parallel $ do
     let expected = Just $ Map
           [
             (Map
-              [(Text "first-name" Nothing,Text "last-name" Nothing)]
+              [(Text "first-name" NoQuote Nothing,Text "last-name" NoQuote Nothing)]
               Nothing
-            ,Text "person" Nothing)
+            ,Text "person" NoQuote Nothing)
           , (List
-              [Text "a" Nothing,Text "b" Nothing,Text "c" Nothing,Text "d" Nothing,Text "id" Nothing]
+              [Text "a" NoQuote Nothing,Text "b" NoQuote Nothing,Text "c" NoQuote  Nothing,Text "d" NoQuote Nothing,Text "id" NoQuote Nothing]
               Square
               Nothing
-            ,Text "value" Nothing)
+            ,Text "value" NoQuote Nothing)
           ,(Map
-            [(Text "nested" Nothing,
-              Map [(Text "ident" Nothing,Text "ifier" Nothing)] Nothing)] Nothing
+            [(Text "nested" NoQuote Nothing,
+              Map [(Text "ident" NoQuote Nothing,Text "ifier" NoQuote Nothing)] Nothing)] Nothing
             ,Map
-              [ (Text "with" Nothing
+              [ (Text "with" NoQuote Nothing
                 ,Map
-                  [(Text "nested" Nothing,Text "value-pair" Nothing)]
+                  [(Text "nested" NoQuote Nothing,Text "value-pair" NoQuote Nothing)]
                   Nothing)
               ]
             Nothing)
@@ -180,10 +180,10 @@ spec = parallel $ do
   it "Example 07 Comments" $ do
     let actual = parseSugarFromText $ decodeUtf8 $(embedFile "../examples/07_comments.sg")
     let expected = Just $ Map
-          [(Text "a" Nothing,Text "b" Nothing)
-          ,(Text "c" Nothing,Text "d" Nothing)
-          ,(Text "e" Nothing,Text "f" Nothing)
-          ,(Text "g" Nothing,Text "h" Nothing)
+          [(Text "a" NoQuote Nothing,Text "b" NoQuote Nothing)
+          ,(Text "c" NoQuote Nothing,Text "d" NoQuote Nothing)
+          ,(Text "e" NoQuote Nothing,Text "f" NoQuote Nothing)
+          ,(Text "g" NoQuote Nothing,Text "h" NoQuote Nothing)
           ]
           Nothing
     actual `shouldBe` expected

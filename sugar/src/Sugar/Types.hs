@@ -2,6 +2,7 @@
 module Sugar.Types
   ( Sugar(..)
   , Wrap(..)
+  , Quote(..)
   , Note
   , readSugarMay
   , sugarTextMay
@@ -14,6 +15,7 @@ module Sugar.Types
 import Data.Text (Text)
 import Data.Maybe (mapMaybe)
 import Data.Text.Conversions (ToText(..), fromText, unUTF8, decodeConvertText, UTF8(..))
+import Data.Char (isSeparator)
 import Data.String (IsString(..))
 import Data.Word (Word8,Word16,Word32,Word64)
 import Data.Int (Int8,Int16,Int32,Int64)
@@ -30,7 +32,7 @@ import qualified Data.Text as T
 
 data Sugar
   = Unit Note
-  | Text Text Note
+  | Text Text Quote Note
   | List [Sugar] Wrap Note
   | Map [(Sugar,Sugar)] Note
   deriving (Eq, Show, Generic)
@@ -40,23 +42,42 @@ data Wrap
   | Paren
   deriving (Eq, Show, Generic)
 
+data Quote
+  = HasQuote
+  | NoQuote
+  deriving (Eq, Show, Generic)
+
 type Note = Maybe [Sugar]
 
 --
 
 sugarTextMay :: Sugar -> Maybe Text
-sugarTextMay (Text t _) = Just t
+sugarTextMay (Text t _ _) = Just t
 sugarTextMay _ = Nothing
 
 readSugarMay :: Read a => Sugar -> Maybe a
-readSugarMay (Text t _) = readMay $ T.unpack t
+readSugarMay (Text t _ _) = readMay $ T.unpack t
 readSugarMay _ = Nothing
 
 sugarMapAsIxMap :: [(Sugar,Sugar)] -> Map.Map (Int, Sugar) Sugar
 sugarMapAsIxMap = Map.fromList . zipWith (\i (k,v) -> ((i,k),v)) [0..]
 
 sugarShow :: Show a => a -> Sugar
-sugarShow s = Text (T.pack $ show s) Nothing
+sugarShow = sanitizeTextToSugar . (T.pack . show)
+
+sanitizeTextToSugar :: Text -> Sugar
+sanitizeTextToSugar t = case sanitizeTextMay t of
+  Nothing -> Text t NoQuote Nothing
+  Just t' -> Text t' HasQuote Nothing 
+
+sanitizeTextMay :: Text -> Maybe Text
+sanitizeTextMay t
+  | T.length t == 0 = Just "\"\""
+  | T.find (\c -> isSeparator c || elem c reservedChars) t /= Nothing = Just $ replaceDoubleQuotes t
+  | otherwise = Nothing
+  where
+    replaceDoubleQuotes :: Text -> Text
+    replaceDoubleQuotes = T.replace "\"" "\\\""
 
 reservedChars :: [Char]
 reservedChars = ['\"','[',']','<','>','(',')','{','}',';',',',':']
@@ -67,7 +88,7 @@ instance Ord Sugar where
   compare (Unit x) (Unit y) = compare x y
   compare Unit{} _ = GT
   compare _ Unit{} = LT
-  compare (Text x0 x1) (Text y0 y1) = compare x0 y0 `mappend` compare x1 y1
+  compare (Text x0 _ x1) (Text y0 _ y1) = compare x0 y0 `mappend` compare x1 y1
   compare Text{} _ = GT
   compare _ Text{} = LT
   compare (List x0 _ x1) (List y0 _ y1) = compare x0 y0 `mappend` compare x1 y1
@@ -82,7 +103,7 @@ instance Serialize.Serialize Sugar where
     where
       go :: Word8 -> Serialize.Get Sugar
       go 0 = Unit <$> Serialize.get
-      go 1 = Text <$> getSerializedText <*> Serialize.get
+      go 1 = Text <$> getSerializedText <*> getSerializedQuote <*> Serialize.get
       go 2 = List <$> Serialize.get <*> Serialize.get <*> Serialize.get
       go 3 = Map <$> Serialize.get <*> Serialize.get
       go _ = fail "No matching Sugar value"
@@ -92,12 +113,21 @@ instance Serialize.Serialize Sugar where
         txt <- (decodeConvertText . UTF8) <$> (Serialize.get :: Serialize.Get BS.ByteString)
         maybe (fail "Cannot deserialize text as UTF8") pure txt
 
+      getSerializedQuote :: Serialize.Get Quote
+      getSerializedQuote = do
+        q <- (Serialize.get :: Serialize.Get Word8)
+        case q of
+          0 -> pure NoQuote
+          1 -> pure HasQuote
+          _ -> fail "Cannot deserialize into Quote"
+
   put (Unit note) = do
     Serialize.put (0 :: Word8)
     Serialize.put note
-  put (Text txt note) = do
+  put (Text txt quote note) = do
     Serialize.put (1 :: Word8)
     Serialize.put (unUTF8 $ fromText txt :: BS.ByteString)
+    Serialize.put (case quote of NoQuote -> 0 :: Word8; HasQuote -> 1 :: Word8)
     Serialize.put note
   put (List xs w note) = do
     Serialize.put (2 :: Word8)
@@ -112,8 +142,7 @@ instance Serialize.Serialize Sugar where
 instance Serialize.Serialize Wrap where
 
 instance IsString Sugar where
-  fromString str = Text (toText str) Nothing
-
+  fromString = sanitizeTextToSugar . toText
 
 class FromSugar a where
   parseSugar :: Sugar -> Maybe a
@@ -134,12 +163,12 @@ instance (FromSugar a, Ord a, FromSugar b) => FromSugar (Map.Map a b) where
   parseSugar _ = Nothing
 
 instance FromSugar Text where
-  parseSugar (Text t _) = Just t
+  parseSugar (Text t _ _) = Just t
   parseSugar _ = Nothing
 
 instance FromSugar Bool where
-  parseSugar (Text "#t" _) = Just True
-  parseSugar (Text "#f" _) = Just False
+  parseSugar (Text "#t" _ _) = Just True
+  parseSugar (Text "#f" _ _) = Just False
   parseSugar _ = Nothing
 
 instance FromSugar Integer where parseSugar = readSugarMay
@@ -164,7 +193,7 @@ instance ToSugar () where
   toSugar () = Unit Nothing
 
 instance ToSugar Text where
-  toSugar t = Text t Nothing
+  toSugar = sanitizeTextToSugar
 
 -- TODO: Will conflict with a String instance (aka [Char])
 instance ToSugar a => ToSugar [a] where

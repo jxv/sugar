@@ -18,12 +18,12 @@ import Control.Applicative
 import qualified Data.Text as T
 import qualified Sugar.Types as Sg
 
-import Sugar.Types (Wrap(..))
+import Sugar.Types (Wrap(..), Quote(..))
 import Sugar.Lexer
 
 data Token
   = Unit TokenNote
-  | Text String TokenNote
+  | Text String Quote TokenNote
   | List [TokenStep] Wrap TokenNote
   | Map [(TokenStep,TokenStep)] TokenNote
   deriving (Show, Eq)
@@ -62,7 +62,7 @@ instance Monad Parser where
 flatten :: TokenStep -> Sg.Sugar
 flatten (_, s) = case s of
   Unit note -> Sg.Unit (fmap flatten <$> note)
-  Text str note -> Sg.Text (T.pack str) (fmap flatten <$> note)
+  Text str quote note -> Sg.Text (T.pack str) quote (fmap flatten <$> note)
   List elems wrap note -> Sg.List (flatten <$> elems) wrap (fmap flatten <$> note)
   Map elems note -> Sg.Map ((\(x,y) -> (flatten x, flatten y)) <$> elems) (fmap flatten <$> note)
 
@@ -180,7 +180,7 @@ sugarParseQuote = do
   s <- lexemeQuoteString
   void $ lexeme QuoteEnd
   note <- sugarParseNote
-  let tkn = Text s note
+  let tkn = Text s HasQuote note
   pure (sl, tkn)
 
 sugarParseText :: Parser TokenStep
@@ -188,7 +188,7 @@ sugarParseText = do
   (sl, _) <- lexeme StringStart
   s <- lexemeString
   note <- sugarParseNote
-  let tkn = Text s note
+  let tkn = Text s NoQuote note
   pure (sl, tkn)
 
 sugarParseComma :: Parser ()

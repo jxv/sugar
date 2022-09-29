@@ -19,7 +19,6 @@ module Sugar.IO
 
 import Data.Text (Text)
 import Data.Maybe (isNothing)
-import Data.Char (isSeparator)
 
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
@@ -63,7 +62,8 @@ ppNewLine ppc pps = "\n" <> prettyPrintNesting ppc pps
 
 prettyPrintStep :: PrettyPrintConfig -> PrettyPrintState -> Sugar -> Text
 prettyPrintStep _ _ (Unit note) = "()" <> minifyPrintNote note
-prettyPrintStep _ _ (Text txt note) = sanitizeText txt <> minifyPrintNote note
+prettyPrintStep _ _ (Text txt NoQuote note) =  txt <> minifyPrintNote note
+prettyPrintStep _ _ (Text txt HasQuote note) = "\"" <> txt <> "\"" <> minifyPrintNote note
 prettyPrintStep ppc pps (List xs w note) =
     open
     <> T.concat (map (\x -> T.concat [ppNewLine ppc pps, prettyPrintStep ppc (ppsIncrNesting pps) x]) xs)
@@ -87,7 +87,8 @@ prettyPrintStep ppc pps (Map m note) = if ppsNesting pps == 0 && isNothing note 
 
 minifyPrint :: Sugar -> Text
 minifyPrint (Unit note) = "()" <> minifyPrintNote note
-minifyPrint (Text txt note) = sanitizeText txt <> minifyPrintNote note
+minifyPrint (Text txt NoQuote note) = txt <> minifyPrintNote note
+minifyPrint (Text txt HasQuote note) = "\"" <> txt <> "\"" <> minifyPrintNote note
 minifyPrint (List xs w note) = open <> T.intercalate ":" (map minifyPrint xs) <> close <> minifyPrintNote note
   where
     open, close :: Text
@@ -100,15 +101,6 @@ minifyPrint (Map m note) = "{" <> T.intercalate "," (map minifyPrint xs) <> "}" 
 minifyPrintNote :: Note -> Text
 minifyPrintNote Nothing = ""
 minifyPrintNote (Just xs) = "<" <> T.intercalate " " (map minifyPrint xs) <> ">"
-
-sanitizeText :: Text -> Text
-sanitizeText t
-  | T.length t == 0 = "\"\""
-  | T.find (\c -> isSeparator c || elem c reservedChars) t /= Nothing = "\"" <> replaceDoubleQuotes t <> "\""
-  | otherwise = t
-  where
-    replaceDoubleQuotes :: Text -> Text
-    replaceDoubleQuotes = T.replace "\"" "\\\""
 
 readSugarFromFile :: FilePath -> IO (Maybe Sugar)
 readSugarFromFile path = do
