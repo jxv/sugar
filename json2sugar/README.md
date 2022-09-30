@@ -1,4 +1,4 @@
-# json2sg
+# json2sugar
 
 Lossy conversion from JSON to Sugar
 
@@ -7,7 +7,7 @@ Lossy conversion from JSON to Sugar
 Pass JSON through `stdin` and export out Sugar through `stdout`
 
 ```shell
-json2sg < input.json > output.sg
+json2sugar < input.json > output.sg
 ```
 
 ## Format comparsion
