@@ -7,6 +7,7 @@ module Sugar.Types
   , readSugarMay
   , sugarTextMay
   , sugarMapAsIxMap
+  , sanitizeTextToSugar 
   , reservedChars
   , FromSugar(..)
   , ToSugar(..)

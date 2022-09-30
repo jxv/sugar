@@ -48,7 +48,7 @@ class ToSugarCube a where
 
 sugarCubeMay :: Sugar -> Maybe SugarCube
 sugarCubeMay (Unit _) = Just SugarCube'Unit
-sugarCubeMay (Text t _) = Just $ SugarCube'Text t
+sugarCubeMay (Text t _ _) = Just $ SugarCube'Text t
 sugarCubeMay (List xs _ _) = do
   xs' <- mapM sugarCubeMay xs
   return $ SugarCube'List xs'
@@ -76,7 +76,7 @@ writeJsonAsSugar src des = do
 
 instance ToSugar SugarCube where
   toSugar SugarCube'Unit = Unit Nothing
-  toSugar (SugarCube'Text t) = Text t Nothing
+  toSugar (SugarCube'Text t) = sanitizeTextToSugar t
   toSugar (SugarCube'List xs) = List (map (toSugarWithWrap Paren) xs) Square Nothing
     where
       -- Alternate nesting between Wrap types
