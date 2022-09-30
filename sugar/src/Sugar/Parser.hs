@@ -16,7 +16,7 @@ import Control.Monad
 import Control.Applicative
 
 import qualified Data.Text as T
-import qualified Sugar.Types as Sg
+import qualified Sugar.Types as G
 
 import Sugar.Types (Wrap(..), Quote(..))
 import Sugar.Lexer
@@ -59,12 +59,12 @@ instance Monad Parser where
 
 --
 
-flatten :: TokenStep -> Sg.Sugar
+flatten :: TokenStep -> G.Sugar
 flatten (_, s) = case s of
-  Unit note -> Sg.Unit (fmap flatten <$> note)
-  Text str quote note -> Sg.Text (T.pack str) quote (fmap flatten <$> note)
-  List elems wrap note -> Sg.List (flatten <$> elems) wrap (fmap flatten <$> note)
-  Map elems note -> Sg.Map ((\(x,y) -> (flatten x, flatten y)) <$> elems) (fmap flatten <$> note)
+  Unit note -> G.Unit (fmap flatten <$> note)
+  Text str quote note -> G.Text (T.pack str) quote (fmap flatten <$> note)
+  List elems wrap note -> G.List (flatten <$> elems) wrap (fmap flatten <$> note)
+  Map elems note -> G.Map ((\(x,y) -> (flatten x, flatten y)) <$> elems) (fmap flatten <$> note)
 
 --
 

@@ -37,7 +37,7 @@ spec = parallel $ do
     let expected = [OpenAngle, CloseAngle]
     actual `shouldBe` expected
   it "Example 01 Top Level Map" $ do
-    let actual = parseSugarFromText $ decodeUtf8 $(embedFile "../examples/01_top-level-map.sg")
+    let actual = parseSugarFromText $ decodeUtf8 $(embedFile "../examples/01_top-level-map.g")
     let expected = Just $ Map
           [(Text "Lorem" NoQuote Nothing,Text "ipsum" NoQuote Nothing)
           ,(Text "dolor" NoQuote Nothing,Text "site amet" HasQuote Nothing)
@@ -47,7 +47,7 @@ spec = parallel $ do
           Nothing
     actual `shouldBe` expected
   it "Example 02 Nested Map" $ do
-    let actual = parseSugarFromText $ decodeUtf8 $(embedFile "../examples/02_nested-map.sg")
+    let actual = parseSugarFromText $ decodeUtf8 $(embedFile "../examples/02_nested-map.g")
     let expected = Just $ Map
           [(Text "Lorem" NoQuote Nothing,Map
             [(Text "ipsum" NoQuote Nothing,Text "dolor" NoQuote Nothing)
@@ -65,7 +65,7 @@ spec = parallel $ do
           Nothing
     actual `shouldBe` expected
   it "Example 03 Top Level List" $ do
-    let actual = parseSugarListFromText $ decodeUtf8 $(embedFile "../examples/03_top-level-list.sg")
+    let actual = parseSugarListFromText $ decodeUtf8 $(embedFile "../examples/03_top-level-list.g")
     let expected = Just $ List
           [Text "Lorem" NoQuote Nothing
           ,Text "ipsum" HasQuote Nothing
@@ -78,7 +78,7 @@ spec = parallel $ do
           Nothing
     actual `shouldBe` expected
   it "Example 04 Nest List" $ do
-    let actual = parseSugarListFromText $ decodeUtf8 $(embedFile "../examples/04_nest-list.sg")
+    let actual = parseSugarListFromText $ decodeUtf8 $(embedFile "../examples/04_nest-list.g")
     let expected = Just $ List
           [List
             [Text "Lorem" NoQuote Nothing,Text "ipsum" NoQuote Nothing]
@@ -107,7 +107,7 @@ spec = parallel $ do
           Nothing
     actual `shouldBe` expected
   it "Example 05 Note" $ do
-    let actual = parseSugarFromText $ decodeUtf8 $(embedFile "../examples/05_note.sg")
+    let actual = parseSugarFromText $ decodeUtf8 $(embedFile "../examples/05_note.g")
     let expected = Just $ Map
           [(Text "Lorem" NoQuote Nothing,Text "ipsum" NoQuote (Just [Text "dolor" NoQuote Nothing]))
           ,(Text "site" NoQuote Nothing,Text "amet" NoQuote (Just [Text "consectetur adipiscing" HasQuote Nothing]))
@@ -152,7 +152,7 @@ spec = parallel $ do
           Nothing
     actual `shouldBe` expected
   it "Example 06 Top Level Non-Text Map" $ do
-    let actual = parseSugarFromText $ decodeUtf8 $(embedFile "../examples/06_top-level-non-text-map.sg")
+    let actual = parseSugarFromText $ decodeUtf8 $(embedFile "../examples/06_top-level-non-text-map.g")
     let expected = Just $ Map
           [
             (Map
@@ -178,7 +178,7 @@ spec = parallel $ do
           Nothing
     actual `shouldBe` expected
   it "Example 07 Comments" $ do
-    let actual = parseSugarFromText $ decodeUtf8 $(embedFile "../examples/07_comments.sg")
+    let actual = parseSugarFromText $ decodeUtf8 $(embedFile "../examples/07_comments.g")
     let expected = Just $ Map
           [(Text "a" NoQuote Nothing,Text "b" NoQuote Nothing)
           ,(Text "c" NoQuote Nothing,Text "d" NoQuote Nothing)

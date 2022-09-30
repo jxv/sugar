@@ -12,7 +12,10 @@ Sugar is a pretty, sweet data language. Alternative to: JSON, YAML, TOML, et cet
 There is one type represented by 4 values: `Unit`, `Text`, `List`, & `Map`. _Optional: Attaching a variadic note_
 
 ```
-sg ::= unit <sg...>? | text <sg...>?  | [sg] <sg...>?| {sg:sg} <sg...>?
+g ::= unit <g, ...>?
+    | text <g, ...>?
+    | list [g, ...] <g, ...>?
+    | map {g:g, ...} <g, ...>?
 ```
 ___
 
