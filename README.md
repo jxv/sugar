@@ -7,23 +7,39 @@ Sugar is a pretty, sweet data language. Alternative to: JSON, YAML, TOML, et cet
 
 ---
 
-### Basic idea
+### The main idea
 
-There is one type represented by 4 values: `Unit`, `Text`, `List`, & `Map`. _Optional: Attaching a variadic note_
+Sugar is a general-purpose data language that has 4 value types: `Unit`, `Text`, `List`, & `Map`. There's also an optional value, `Note`. It appends to any value type using `< >` and comes in handy as associated metadata or parameters.
 
+#### Simple example
+```racket
+name: sugar
+fileExtension: *.g
+pronunciation: "sho͝ogʹər"
+definitions: [
+  "Sucrose in crystal form"<noun>
+  "To sweeten"<verb>
+  "Term of endearment"<noun>
+  "Syntactic sugar"<noun>
+]
+synonyms: [sweetener, sucrose]
+antonyms: [achromatic, soothe]
+chemicalProperties: {
+  formula: [C<12> H<22> O<11>],
+  moleWeight<g / mol>: 342.30,
+  density<g / cm ^ 3>: 1.587,
+  meltingPoint: 186<celsius>,
+}
 ```
-g ::= unit <g, ...>?
-    | text <g, ...>?
-    | list [g, ...] <g, ...>?
-    | map {g:g, ...} <g, ...>?
-```
+
 ___
 
-### Quick examples
+### In-depth examples
 
 `Text` to `Text` pairs
 
 ```racket
+; This is a comment.
 ; Top-level of a file is a `Map`.
 
 ; `key0` and `key1` are text types. `value0` and "value one within..." are text types too.
@@ -88,6 +104,18 @@ _\*Notice the lack of number and boolean types. Unit can be thought of as null._
 | ---- | ------- |
 | Single-line | `; comment` |
 | Multi-line | ```#\| comment content \|#``` |
+
+---
+
+\*BNF
+
+```
+sugar ::= '()' note | text note | list note | map note
+text ::= '"' string '"' | string
+list ::= '[' sugar [[','] sugar] ']'
+map  ::= '{' sugar ':' sugar [[','] sugar ':' sugar] '}'
+note ::= ['<' sugar [[','] sugar] '>']
+```
 
 ---
 
