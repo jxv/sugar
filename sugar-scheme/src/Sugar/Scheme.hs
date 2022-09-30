@@ -29,8 +29,8 @@ tokenToLispVal (_, P.Map m _) = (HashTable . Map.fromList) <$> mapM (\(x,y) -> (
 
 sugarToLispVal :: Sugar -> Either String LispVal
 sugarToLispVal (G.Unit _) = Right nullLisp
-sugarToLispVal (G.Text txt Sg.HasQuote _) = pure $ String (unpack txt)
-sugarToLispVal (G.Text txt Sg.NoQuote _) =  case parse valParser "valParser" (unpack txt) of
+sugarToLispVal (G.Text txt G.HasQuote _) = pure $ String (unpack txt)
+sugarToLispVal (G.Text txt G.NoQuote _) =  case parse valParser "valParser" (unpack txt) of
   Left _ -> Left (unpack txt)
   Right v -> Right v
 sugarToLispVal (G.List ls _ _) = List <$> mapM sugarToLispVal ls
